@@ -1,8 +1,8 @@
 <?php
 
 $dbhost = "localhost";
-$dbuser = "root";
-$dbpass = "";
+$dbuser = "myuser";
+$dbpass = "mypassword";
 $dbname = "sidehustledb";
 
 // Establish database connection
