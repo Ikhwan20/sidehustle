@@ -1,6 +1,36 @@
 <?php
-session_start();
+include("session_handler.php");
 include("connection.php");
+include("functions.php");
+
+if (isset($_SESSION['User_ID'])) {
+    $user_id = $_SESSION['User_ID'];
+
+    // Prepare statement to fetch jobs matching user skills
+    $query = "
+        SELECT DISTINCT j.* 
+        FROM jobs j
+        JOIN job_skills js ON j.Job_ID = js.Job_ID
+        JOIN user_skills us ON js.Skill_ID = us.Skill_ID
+        WHERE us.User_ID = ?
+    ";
+
+    $stmt = $con->prepare($query);
+    if ($stmt === false) {
+        die("Prepare failed: " . htmlspecialchars($con->error)); // Debugging line
+    }
+
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+} else {
+    // If no user is logged in, show all jobs
+    $query = "SELECT * FROM jobs";
+    $result = mysqli_query($con, $query);
+    if ($result === false) {
+        die("Query failed: " . htmlspecialchars($con->error)); // Debugging line
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -22,112 +52,12 @@ include("connection.php");
     <link href="lib/owlcarousel/assets/owl.carousel.min.css" rel="stylesheet">
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
-    <style>
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .btn-orange {
-            background-color: #FE7A36;
-            color: white;
-            transition: background-color 0.3s ease;
-        }
-        .btn-orange:hover {
-            background-color: #D96127;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1050;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: rgba(0, 0, 0, 0.5);
-        }
-        .modal-content {
-            position: relative;
-            margin: auto;
-            padding: 20px;
-            width: 80%;
-            max-width: 500px;
-            background-color: #fff;
-            border-radius: 8px;
-            animation: modalopen 0.4s;
-        }
-        .modal-content {
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            position: fixed;
-        }
-
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-        }
-        .close:hover,
-        .close:focus {
-            color: black;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-        @keyframes modalopen {
-            from {
-                opacity: 0;
-                transform: translate(-50%, -50%) scale(0.8);
-            }
-            to {
-                opacity: 1;
-                transform: translate(-50%, -50%) scale(1);
-            }
-        }
-    </style>
+    <link href="css/custom.css" rel="stylesheet">
 </head>
 <body>
     <div class="container-xxl bg-white p-0">
       
-
-         <!-- Navbar Start -->
-         <nav class="navbar navbar-expand-lg bg-white navbar-light shadow sticky-top p-0">
-            <div class="container-fluid">
-                <a href="index.php" class="navbar-brand d-flex align-items-center text-center py-0 px-4 px-lg-5">
-                    <h1 class="m-0" style="color: #FE7A36;">Side Hustle</h1>
-                </a>
-                <button class="navbar-toggler me-4" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="navbarCollapse">
-                    <ul class="navbar-nav ms-auto p-4 p-lg-0">
-                        <li class="nav-item">
-                            <a href="index.php" class="nav-link active">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="about.html" class="nav-link">About</a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="job-list_1.php" class="nav-link">Job</a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="contact.html" class="nav-link">Contact</a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="login.php" class="nav-link">Sign In</a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="employer_login.php" class="btn rounded-0 py-4 px-lg-5 d-none d-lg-block" style="color: white; background-color: #FE7A36;">Employer<i class="fa fa-arrow-right ms-3"></i></a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
+        <?php include("navbar.php"); ?>
 
         <!-- Carousel Start -->
         <div class="container-fluid p-0">
@@ -168,70 +98,88 @@ include("connection.php");
         <!-- Content Start-->
         <section id="content">
             <div class="container px-4 py-5">
-                <h2 class="text-center">Various Jobs Opportunities with Us !</h2>
+                <h2 class="text-center">Top 10 Favor Careers with Us !</h2>
                 <div class="row row-cols-1 row-cols-lg-3 align-items-stretch g-4 py-3">
                     <div class="col">
-                        <div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg" style="background-image: url(img/cashier.jpg); background-size: cover;">
-                            <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
-                                <h3 class="pt-5 mt-5 mb-4 display-6 lh-md fw-bold fs-3" style="color: antiquewhite;">Cashier</h3>
-                              </div>
-                        </div>
+                        <a href="job-list_1.php?search=cashier" class="text-decoration-none">
+                            <div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg" style="background-image: url(img/cashier.jpg); background-size: cover;">
+                                <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
+                                    <h3 class="pt-5 mt-5 mb-4 display-6 lh-md fw-bold fs-3" style="color: antiquewhite;">Cashier</h3>
+                                </div>
+                            </div>
+                        </a>
                     </div>
                     <div class="col">
-                        <div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg" style="background-image: url(img/barista.jpg); background-size: cover;">
-                            <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
-                                <h3 class="pt-5 mt-5 mb-4 display-6 lh-md fw-bold fs-3" style="color: antiquewhite;">Barista</h3>
-                              </div>
-                        </div>
+                        <a href="job-list_1.php?search=barista" class="text-decoration-none">
+                            <div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg" style="background-image: url(img/barista.jpg); background-size: cover;">
+                                <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
+                                    <h3 class="pt-5 mt-5 mb-4 display-6 lh-md fw-bold fs-3" style="color: antiquewhite;">Barista</h3>
+                                </div>
+                            </div>
+                        </a>
                     </div>
                     <div class="col">
-                        <div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg" style="background-image: url(img/housekeeping.jpg); background-size: cover;">
-                            <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
-                                <h3 class="pt-5 mt-5 mb-4 display-6 lh-md fw-bold fs-3" style="color: antiquewhite;">Housekeeping</h3>
-                              </div>
-                        </div>
+                        <a href="job-list_1.php?search=housekeeping" class="text-decoration-none">
+                            <div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg" style="background-image: url(img/housekeeping.jpg); background-size: cover;">
+                                <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
+                                    <h3 class="pt-5 mt-5 mb-4 display-6 lh-md fw-bold fs-3" style="color: antiquewhite;">Housekeeping</h3>
+                                </div>
+                            </div>
+                        </a>
                     </div>
                     <div class="col">
-                        <div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg" style="background-image: url(img/catsitter.webp); background-size: cover;">
-                            <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
-                                <h3 class="pt-5 mt-5 mb-4 display-6 lh-md fw-bold fs-3" style="color: antiquewhite;">Cat Sitter</h3>
-                              </div>
-                        </div>
+                        <a href="job-list_1.php?search=catsitter" class="text-decoration-none">
+                            <div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg" style="background-image: url(img/catsitter.webp); background-size: cover;">
+                                <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
+                                    <h3 class="pt-5 mt-5 mb-4 display-6 lh-md fw-bold fs-3" style="color: antiquewhite;">Cat Sitter</h3>
+                                </div>
+                            </div>
+                        </a>
                     </div>
                     <div class="col">
-                        <div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg" style="background-image: url(img/shoppers.jpeg); background-size: cover;">
-                            <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
-                                <h3 class="pt-5 mt-5 mb-4 display-6 lh-md fw-bold fs-3" style="color: antiquewhite;">Personal Shoppers</h3>
-                              </div>
-                        </div>
+                        <a href="job-list_1.php?search=shopper" class="text-decoration-none">
+                            <div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg" style="background-image: url(img/shoppers.jpeg); background-size: cover;">
+                                <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
+                                    <h3 class="pt-5 mt-5 mb-4 display-6 lh-md fw-bold fs-3" style="color: antiquewhite;">Personal Shoppers</h3>
+                                </div>
+                            </div>
+                        </a>
                     </div>
                     <div class="col">
-                        <div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg" style="background-image: url(img/tutor.jpg); background-size: cover;">
-                            <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
-                                <h3 class="pt-5 mt-5 mb-4 display-6 lh-md fw-bold fs-3" style="color: antiquewhite">Tutor</h3>
-                              </div>
-                        </div>
+                        <a href="job-list_1.php?search=tutor" class="text-decoration-none">
+                            <div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg" style="background-image: url(img/tutor.jpg); background-size: cover;">
+                                <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
+                                    <h3 class="pt-5 mt-5 mb-4 display-6 lh-md fw-bold fs-3" style="color: antiquewhite">Tutor</h3>
+                                </div>
+                            </div>
+                        </a>
                     </div>
                     <div class="col">
-                        <div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg" style="background-image: url(img/lawnmower.jpg); background-size: cover;">
-                            <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
-                                <h3 class="pt-5 mt-5 mb-4 display-6 lh-md fw-bold fs-3" style="color: antiquewhite;">Lawn Mower</h3>
-                              </div>
-                        </div>
+                        <a href="job-list_1.php?search=lawnmower" class="text-decoration-none">
+                            <div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg" style="background-image: url(img/lawnmower.jpg); background-size: cover;">
+                                <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
+                                    <h3 class="pt-5 mt-5 mb-4 display-6 lh-md fw-bold fs-3" style="color: antiquewhite;">Lawn Mower</h3>
+                                </div>
+                            </div>
+                        </a>
                     </div>
                     <div class="col">
-                        <div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg" style="background-image: url(img/nanny.jpg); background-size: cover;">
-                            <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
-                                <h3 class="pt-5 mt-5 mb-4 display-6 lh-md fw-bold fs-3" style="color: antiquewhite;">Nanny</h3>
-                              </div>
-                        </div>
+                        <a href="job-list_1.php?search=nanny" class="text-decoration-none">
+                            <div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg" style="background-image: url(img/nanny.jpg); background-size: cover;">
+                                <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
+                                    <h3 class="pt-5 mt-5 mb-4 display-6 lh-md fw-bold fs-3" style="color: antiquewhite;">Nanny</h3>
+                                </div>
+                            </div>
+                        </a>
                     </div>
                     <div class="col">
-                        <div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg" style="background-image: url(img/waiter.jpg); background-size: cover;">
-                            <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
-                                <h3 class="pt-5 mt-5 mb-4 display-6 lh-md fw-bold fs-3" style="color: antiquewhite;">Waiter</h3>
-                              </div>
-                        </div>
+                        <a href="job-list_1.php?search=waiter" class="text-decoration-none">
+                            <div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg" style="background-image: url(img/waiter.jpg); background-size: cover;">
+                                <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
+                                    <h3 class="pt-5 mt-5 mb-4 display-6 lh-md fw-bold fs-3" style="color: antiquewhite;">Waiter</h3>
+                                </div>
+                            </div>
+                        </a>
                     </div>
                 </div><br>
             </div>
@@ -260,26 +208,24 @@ include("connection.php");
         <div class="container-xxl py-5">
             <div class="container">
                 <h1 class="text-center mb-5">Job Listings</h1><br>
-                <h2 class="text-center mb-1">Browse Your Prefered Job Here</h2><br>
+                <h2 class="text-center mb-1">Browse Your Preferred Job Here</h2><br>
                 <div class="row">
                     <?php
-                    $query = "SELECT * FROM jobs";
-                    $result = mysqli_query($con, $query);
-                    if (mysqli_num_rows($result) > 0) {
-                        while ($row = mysqli_fetch_assoc($result)) {
+                    if ($result->num_rows > 0) {
+                        while ($row = $result->fetch_assoc()) {
                             echo '<div class="col-lg-4 col-md-6 mb-4">';
                             echo '<div class="job-item p-4 mb-4">';
                             echo '<h5>' . htmlspecialchars($row['Title']) . '</h5>';
                             echo '<p><strong>Description:</strong> ' . htmlspecialchars($row['Description']) . '</p>';
                             echo '<p><strong>Location:</strong> ' . htmlspecialchars($row['Location']) . '</p>';
-                            echo '<p><strong>Salary:</strong> RM ' . htmlspecialchars($row['Salary']) . '</p>';
+                            echo '<p><strong>Salary:</strong> RM ' . htmlspecialchars($row['Salary']) . ' per ' . $row['SalaryUnit'] . '</p>';
                             echo '<p class="text-truncate me-0"><i class="fa fa-info-circle text-primary me-2"></i> ' . $row['WorkDate'] . ' (' . $row['Duration'] . ' days)</p>';
                             echo '<span><button class="btn btn-orange details-btn" data-job-id="' . htmlspecialchars($row['Job_ID']) . '" data-title="' . htmlspecialchars($row['Title']) . '" data-description="' . htmlspecialchars($row['Description']) . '" data-location="' . htmlspecialchars($row['Location']) . '" data-salary="' . htmlspecialchars($row['Salary']) . '">View Details</button></span>';
                             echo '</div>';
                             echo '</div>';
                         }
                     } else {
-                        echo '<p>No jobs found.</p>';
+                        echo '<p>No jobs found matching your skills.</p>';
                     }
                     ?>
                 </div>

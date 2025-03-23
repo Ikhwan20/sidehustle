@@ -4,7 +4,18 @@ session_start();
 include("connection.php");
 include("functions.php");
 
-// Function to sanitize and validate input data
+// Fetch skills
+$sql = "SELECT Skill_Name FROM skills";
+$result = $con->query($sql);
+
+$skills = [];
+if ($result->num_rows > 0) {
+    while($row = $result->fetch_assoc()) {
+        $skills[] = $row['Skill_Name'];
+    }
+}
+
+// Function to sanitize input
 function sanitizeInput($data) {
     return htmlspecialchars(stripslashes(trim($data)));
 }
@@ -13,73 +24,83 @@ function sanitizeInput($data) {
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = sanitizeInput($_POST["Username"]);
     $email = sanitizeInput($_POST["Email"]);
-    $password = sanitizeInput($_POST["Password"]);
+    $password = password_hash(sanitizeInput($_POST["Password"]), PASSWORD_BCRYPT); // Hash password
     $gender = sanitizeInput($_POST["gender"]);
     $age = intval($_POST["age"]);
-
-    // File upload handling
     $resume = "";
-    if (isset($_FILES["resume"]) && $_FILES["resume"]["error"] == UPLOAD_ERR_OK) {
-        $resumeName = $_FILES["resume"]["name"];
-        $resumeTmpName = $_FILES["resume"]["tmp_name"];
-        $resumeSize = $_FILES["resume"]["size"];
-        $resumeType = $_FILES["resume"]["type"];
-        $resumeError = $_FILES["resume"]["error"];
-
-        if ($resumeError == UPLOAD_ERR_OK && in_array($resumeType, ["application/pdf"]) && $resumeSize <= 5 * 1024 * 1024) {
-            if (!is_dir("uploads")) {
-                mkdir("uploads", 0777);
-            }
-            $resumeDest = "uploads/" . basename($resumeName);
-            if (move_uploaded_file($resumeTmpName, $resumeDest)) {
-                $resume = $resumeDest;
-            } else {
-                echo "Error uploading resume.";
-                exit();
-            }
-        } else {
-            echo "Invalid resume file.";
-            exit();
-        }
-    }
-
-    // Profile picture handling
     $profilePic = "";
-    if (isset($_FILES["profile-pic"]) && $_FILES["profile-pic"]["error"] == UPLOAD_ERR_OK) {
-        $profilePicName = $_FILES["profile-pic"]["name"];
-        $profilePicTmpName = $_FILES["profile-pic"]["tmp_name"];
-        $profilePicSize = $_FILES["profile-pic"]["size"];
-        $profilePicType = $_FILES["profile-pic"]["type"];
 
-        if (in_array($profilePicType, ["image/jpeg", "image/png"]) && $profilePicSize <= 2 * 1024 * 1024) {
-            if (!is_dir("uploads")) {
-                mkdir("uploads", 0777);
-            }
-            $profilePicDest = "uploads/" . basename($profilePicName);
-            if (move_uploaded_file($profilePicTmpName, $profilePicDest)) {
-                $profilePic = $profilePicDest;
-            } else {
-                echo "Error uploading profile picture.";
-                exit();
-            }
+    // Resume Upload Handling
+    if (!empty($_FILES["resume"]["name"])) {
+        $resumeName = basename($_FILES["resume"]["name"]);
+        $resumeTmpName = $_FILES["resume"]["tmp_name"];
+        $resumeType = $_FILES["resume"]["type"];
+        $resumeSize = $_FILES["resume"]["size"];
+
+        if ($resumeSize <= 5 * 1024 * 1024 && $resumeType === "application/pdf") {
+            if (!is_dir("uploads")) mkdir("uploads", 0777);
+            $resume = "uploads/" . $resumeName;
+            move_uploaded_file($resumeTmpName, $resume);
         } else {
-            echo "Invalid profile picture file.";
-            exit();
+            die("Invalid resume file. Must be a PDF and under 5MB.");
         }
     }
 
-    // Insert new record into users table
-    $insertQuery = "INSERT INTO users (Username, Email, Password, Gender, Age, Resume, ProfilePic) VALUES ('$username', '$email', '$password', '$gender', $age, '$resume', '$profilePic')";
-    if ($con->query($insertQuery) === TRUE) {
+    // Profile Picture Upload Handling
+    if (!empty($_FILES["profile-pic"]["name"])) {
+        $profilePicName = basename($_FILES["profile-pic"]["name"]);
+        $profilePicTmpName = $_FILES["profile-pic"]["tmp_name"];
+        $profilePicType = $_FILES["profile-pic"]["type"];
+        $profilePicSize = $_FILES["profile-pic"]["size"];
+
+        if ($profilePicSize <= 2 * 1024 * 1024 && in_array($profilePicType, ["image/jpeg", "image/png"])) {
+            if (!is_dir("uploads")) mkdir("uploads", 0777);
+            $profilePic = "uploads/" . $profilePicName;
+            move_uploaded_file($profilePicTmpName, $profilePic);
+        } else {
+            die("Invalid profile picture. Must be JPG/PNG and under 2MB.");
+        }
+    }
+
+    // Insert User Data
+    $stmt = $con->prepare("INSERT INTO users (Username, Email, Password, Gender, Age, Resume, ProfilePic) VALUES (?, ?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("ssssiis", $username, $email, $password, $gender, $age, $resume, $profilePic);
+    
+    if ($stmt->execute()) {
+        $user_id = $stmt->insert_id;
+        $stmt->close();
+
+        // Insert Skills if provided
+        if (!empty($_POST['skills'])) {
+            $skills = explode(",", sanitizeInput($_POST['skills']));
+            foreach ($skills as $skill) {
+                $skill = trim($skill);
+                if (!empty($skill)) {
+                    // Insert skill if it doesn't exist
+                    $skill_stmt = $con->prepare("INSERT INTO skills (Skill_Name) VALUES (?) ON DUPLICATE KEY UPDATE Skill_ID=LAST_INSERT_ID(Skill_ID)");
+                    $skill_stmt->bind_param("s", $skill);
+                    $skill_stmt->execute();
+                    $skill_id = $skill_stmt->insert_id;
+                    $skill_stmt->close();
+
+                    // Link user to skill
+                    $user_skill_stmt = $con->prepare("INSERT INTO user_skills (User_ID, Skill_ID) VALUES (?, ?)");
+                    $user_skill_stmt->bind_param("ii", $user_id, $skill_id);
+                    $user_skill_stmt->execute();
+                    $user_skill_stmt->close();
+                }
+            }
+        }
+
         $_SESSION['signup_success'] = true;
         header("Location: login.php");
         exit();
     } else {
-        echo "Error registering user: " . $con->error;
+        die("Error registering user: " . $stmt->error);
     }
-    $con->close();
 }
 ?>
+
 
 <!DOCTYPE html>
 <html>
@@ -99,6 +120,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <link href="lib/owlcarousel/assets/owl.carousel.min.css" rel="stylesheet">
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
+    <style>
+        .autocomplete-items { border: 1px solid #ccc; max-height: 150px; overflow-y: auto; position: absolute; z-index: 1000; width: 30%; background: white; }
+        .autocomplete-items div { padding: 8px; cursor: pointer; }
+        .autocomplete-items div:hover { background-color: #e9e9e9; }
+        .autocomplete-active { background-color: #007bff !important; color: #ffffff; }
+    </style>
 </head>
 <body>
 <div class="container-xxl bg-white p-0">
@@ -157,6 +184,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <div class="form-group mb-3">
                         <label for="resume">Upload Resume</label>
                         <input type="file" class="form-control" id="resume" name="resume" required>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="skills">Skills (optional)</label>
+                        <input type="text" id="skill-input" class="form-control" placeholder="Type a skill">
+                        <div id="autocomplete-list" class="autocomplete-items"></div>
+                        <div id="selected-skills" class="mt-2"></div>
+                        <input type="hidden" name="skills" id="skills-hidden">
                     </div>
                     <div class="form-group mb-3">
                         <label for="profile-pic">Profile Picture</label><br>
@@ -238,5 +272,52 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         reader.readAsDataURL(event.target.files[0]);
     }
     </script>
+
+<script>
+    $(document).ready(function () {
+        let availableSkills = <?php echo json_encode($skills); ?>;
+        let selectedSkills = [];
+
+        $('#skill-input').on('input', function () {
+            let val = this.value;
+            let listDiv = $('#autocomplete-list');
+            listDiv.empty();
+            if (!val) return;
+
+            availableSkills.forEach(skill => {
+                if (skill.toLowerCase().startsWith(val.toLowerCase())) {
+                    let item = $('<div>').text(skill);
+                    item.click(function () {
+                        if (!selectedSkills.includes(skill)) {
+                            selectedSkills.push(skill);
+                            updateSelectedSkills();
+                        }
+                        $('#skill-input').val('');
+                        listDiv.empty();
+                    });
+                    listDiv.append(item);
+                }
+            });
+        });
+
+        $('#skill-input').on('keydown', function (e) {
+            if (e.keyCode === 13) e.preventDefault();  // Prevent form submission on Enter
+        });
+
+        function updateSelectedSkills() {
+            let skillContainer = $('#selected-skills');
+            skillContainer.empty();
+            selectedSkills.forEach(skill => {
+                skillContainer.append(`<span class="badge bg-primary m-1">${skill} <span onclick="removeSkill('${skill}')" style="cursor:pointer;">✖</span></span>`);
+            });
+            $('#skills-hidden').val(selectedSkills.join(','));
+        }
+
+        window.removeSkill = function (skill) {
+            selectedSkills = selectedSkills.filter(s => s !== skill);
+            updateSelectedSkills();
+        };
+    });
+</script>
 </body>
 </html>

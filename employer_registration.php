@@ -5,34 +5,53 @@ include("functions.php");
 include("connection.php");
 
 // Handle Sign Up
-if($_SERVER['REQUEST_METHOD'] == "POST") {
-    // Get form data
-    $username = $_POST['username'];
-    $companyName = $_POST['companyName'];
-    $ssmNumber = $_POST['ssmNumber'];
-    $email = $_POST['email'];
-    $password = $_POST['password'];
-    $phone = $_POST['phone'];
+if ($_SERVER['REQUEST_METHOD'] == "POST") {
+    // Get form data and trim spaces
+    $username = trim($_POST['username']);
+    $companyName = trim($_POST['companyName']);
+    $ssmNumber = trim($_POST['ssmNumber']);
+    $email = trim($_POST['email']);
+    $password = trim($_POST['password']);
+    $phone = trim($_POST['phone']);
 
     // Check if form fields are not empty
-    if(!empty($username) && !empty($companyName) && !empty($ssmNumber) && !empty($email) && !empty($password) && strlen($ssmNumber) == 12) {
-        // Save data to database
-        $query = "INSERT INTO employers (username, CompanyName, SSMNumber, Email, Password, Phone) VALUES ('$username', '$companyName', '$ssmNumber', '$email', '$password', '$phone')";
+    if (!empty($username) && !empty($companyName) && !empty($ssmNumber) && !empty($email) && !empty($password)) {
 
-        // Execute query
-        if(mysqli_query($con, $query)) {
-            // Redirect to login page
-            header("Location: employer_login.php");
-            die;
+        // Ensure SSM number is numeric and between 10-12 characters
+        if (!is_numeric($ssmNumber) || strlen($ssmNumber) < 10 || strlen($ssmNumber) > 12) {
+            echo "<script>alert('SSM Number must be 10-12 digits long.');</script>";
+        } else if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            echo "<script>alert('Invalid email format.');</script>";
         } else {
-            echo "<script>alert('Error saving data to database. Please try again later.');</script>";
+            // Hash the password
+            $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+
+            // Sanitize input before inserting into database
+            $username = mysqli_real_escape_string($con, $username);
+            $companyName = mysqli_real_escape_string($con, $companyName);
+            $ssmNumber = mysqli_real_escape_string($con, $ssmNumber);
+            $email = mysqli_real_escape_string($con, $email);
+            $phone = mysqli_real_escape_string($con, $phone);
+
+            // Save data to database
+            $query = "INSERT INTO employers (username, CompanyName, SSMNumber, Email, Password, Phone) 
+                      VALUES ('$username', '$companyName', '$ssmNumber', '$email', '$hashedPassword', '$phone')";
+
+            // Execute query
+            if (mysqli_query($con, $query)) {
+                // Redirect to login page
+                header("Location: employer_login.php");
+                die;
+            } else {
+                echo "<script>alert('Error: " . mysqli_error($con) . "');</script>";
+            }
         }
     } else {
-        // Invalid form data, display error message
         echo "<script>alert('Please fill in all required fields correctly.');</script>";
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html>
 <head>

@@ -5,41 +5,45 @@ include("functions.php");
 include("connection.php");
 
 // Handle Sign In
-if($_SERVER['REQUEST_METHOD'] == "POST") {
-    // Get form data
-    $login = $_POST['login'];
-    $password = $_POST['password'];
+if ($_SERVER['REQUEST_METHOD'] == "POST") {
+    // Get form data and trim spaces
+    $login = trim($_POST['login']);
+    $password = trim($_POST['password']);
 
     // Check if login and password are provided
-    if(!empty($login) &&!empty($password)) {
+    if (!empty($login) && !empty($password)) {
+        // Sanitize input
+        $login = mysqli_real_escape_string($con, $login);
+
         // Check if login is an email or username
-        if(filter_var($login, FILTER_VALIDATE_EMAIL)) {
-            // Login is an email
-            $query = "SELECT * FROM employers WHERE Email='$login' AND Password='$password'";
+        if (filter_var($login, FILTER_VALIDATE_EMAIL)) {
+            $query = "SELECT * FROM employers WHERE Email='$login'";
         } else {
-            // Login is a username
-            $query = "SELECT * FROM employers WHERE Username='$login' AND Password='$password'";
+            $query = "SELECT * FROM employers WHERE Username='$login'";
         }
 
         $result = mysqli_query($con, $query);
 
-        if(mysqli_num_rows($result) == 1) {
+        if ($result && mysqli_num_rows($result) == 1) {
             // Fetch employer's data
             $employerData = mysqli_fetch_assoc($result);
-            
-            // Set session variables for authenticated user
-            $_SESSION['employer_id'] = $employerData['Employer_ID'];
-            $_SESSION['employer_username'] = $employerData['Username'];
-            
-            // Redirect to employer dashboard page
-            header("Location: employer_dashboard.php");
-            die;
+
+            // Verify password
+            if (password_verify($password, $employerData['Password'])) {
+                // Set session variables for authenticated user
+                $_SESSION['employer_id'] = $employerData['Employer_ID'];
+                $_SESSION['employer_username'] = $employerData['Username'];
+
+                // Redirect to employer dashboard page
+                header("Location: employer_dashboard.php");
+                die;
+            } else {
+                echo "<script>alert('Incorrect password.');</script>";
+            }
         } else {
-            // Invalid credentials, display error message
-            echo "<script>alert('Invalid email or username or password. Please try again.');</script>";
+            echo "<script>alert('No account found with this email or username.');</script>";
         }
     } else {
-        // Invalid form data, display error message
         echo "<script>alert('Please fill in all required fields.');</script>";
     }
 }
