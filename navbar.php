@@ -38,7 +38,7 @@ include("session_handler.php");
                         <a href="login.php" class="nav-link">Login</a>
                     </li>
                     <li class="nav-item">
-                        <a href="employer_signup.php" class="nav-link">Employer</a>
+                        <a href="employer_login.php" class="nav-link">Employer</a>
                     </li>
                 <?php endif; ?>
             </ul>
