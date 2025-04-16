@@ -53,25 +53,7 @@ $con->close();
 </head>
 <body>
     <!-- Navbar Start -->
-    <nav class="navbar navbar-expand-lg bg-white navbar-light shadow sticky-top p-0">
-        <a href="employee_dashboard.php" class="navbar-brand d-flex align-items-center text-center py-0 px-4 px-lg-5">
-            <h1 class="m-0" style="color: #FE7A36;">Side Hustle</h1>
-        </a>
-        <button type="button" class="navbar-toggler me-4" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarCollapse">
-            <div class="navbar-nav ms-auto p-4 p-lg-0">
-                <!-- Display welcome message with username -->
-                <a class="nav-link" href="#" id="username" role="button" style="color: #FE7A36;">
-                    Welcome, <?php echo htmlspecialchars($_SESSION['Username']); ?>
-                </a>                
-                <a href="jobs_list.php" class="nav-item nav-link">Job</a>
-                <a href="employee_dashboard.php" class="nav-item nav-link">Dashboard</a>
-                <a href="logout.php" class="nav-item nav-link">Log Out</a>    
-            </div>
-        </div>
-    </nav>
+    <?php include("navbar.php"); ?>
     <!-- Navbar End -->
 
     <!-- User Dashboard Content -->

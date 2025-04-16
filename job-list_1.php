@@ -1,14 +1,25 @@
 <?php
-session_start();
+include("session_handler.php");
 include("connection.php");
 include("functions.php");
 
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-$query = "SELECT * FROM jobs WHERE Active = 1 AND DatePosted >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+$search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
+$query = "SELECT * FROM jobs WHERE Active = 1";
+
+if (!empty($search)) {
+    $query .= " AND LOWER(Title) LIKE LOWER('%" . mysqli_real_escape_string($con, $search) . "%')";
+}
+
+$query .= " ORDER BY Title ASC";
+$result = mysqli_query($con, $query);
+
+if (!isset($_SESSION['User_ID'])) {
+    header("Location: login.php");
+    exit;
+}
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -131,47 +142,8 @@ $query = "SELECT * FROM jobs WHERE Active = 1 AND DatePosted >= DATE_SUB(NOW(), 
 <body>
     <div class="container-xxl bg-white p-0">
         <!--navbar-->
-        <nav class="navbar navbar-expand-lg bg-white navbar-light shadow sticky-top p-0">
-            <div class="container-fluid">
-                <a href="index.php" class="navbar-brand d-flex align-items-center text-center py-0 px-4 px-lg-5">
-                    <h1 class="m-0" style="color: #FE7A36;">Side Hustle</h1>
-                </a>
-                <button class="navbar-toggler me-4" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="navbarCollapse">
-                    <ul class="navbar-nav ms-auto p-4 p-lg-0">
-                        <li class="nav-item">
-                            <a href="index.php" class="nav-link active">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="about.html" class="nav-link">About</a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="job_list.php" class="nav-link">Job</a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="contact.html" class="nav-link">Contact</a>
-                        </li>
-                        <li id="guest-nav" class="nav-item">
-                            <a href="login.php" class="nav-link" style="color: #FE7A36;">Sign In</a>
-                        </li>
-                        <li id="user-nav" class="nav-item dropdown" style="display: none;">
-                            <a class="nav-link dropdown-toggle" href="#" id="username" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="cursor: pointer;">
-                                Welcome, <span id="username-display">User</span>
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="username">
-                                <li><a class="dropdown-item" href="employee_dashboard.php">My Profile</a></li>
-                                <li><a class="dropdown-item" href="#" id="logout-btn">Log Out</a></li>
-                            </ul>
-                        </li>
-                        <li class="nav-item">
-                            <a href="employer_login.php" class="btn rounded-0 py-4 px-lg-5 d-none d-lg-block" style="color: white; background-color: #FE7A36;">Employer<i class="fa fa-arrow-right ms-3"></i></a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
+        <?php include("navbar.php"); ?>
+
 
          <!-- Title Start -->
         <div class="container-xxl py-5 bg-dark page-header-job mb-5">
@@ -188,7 +160,7 @@ $query = "SELECT * FROM jobs WHERE Active = 1 AND DatePosted >= DATE_SUB(NOW(), 
                 <!-- Search panel -->
                 <div class="row mb-4" style="justify-content: center;">
                     <div class="col-md-5 position-relative">
-                        <input type="text" class="form-control" id="searchJobs" placeholder="Search for jobs...">
+                        <input type="text" class="form-control" id="searchJobs" placeholder="Search for jobs..." value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>">
                         <button class="btn btn-clear-search" id="clearSearchBtn">&times;</button>                        </div>
                     <div class="col-md-3">
                         <button class="btn btn-primary w-100" onclick="filterJobs()" style="background-color: #FE7A36;">Search</button>
@@ -199,7 +171,14 @@ $query = "SELECT * FROM jobs WHERE Active = 1 AND DatePosted >= DATE_SUB(NOW(), 
                     <!--job list-->
                     <div id="tab-1" class="tab-pane fade show p-0 active">
                         <?php
-                        $query = "SELECT * FROM jobs ORDER BY Title ASC";
+                        $searchQuery = "";
+                        if (isset($_GET['search']) && !empty($_GET['search'])) {
+                            $searchTerm = mysqli_real_escape_string($con, $_GET['search']);
+                            $searchQuery = "WHERE Title LIKE '%$searchTerm%'";
+                        }
+                        
+                        $query = "SELECT * FROM jobs $searchQuery ORDER BY Title ASC";
+                        
                         $result = mysqli_query($con, $query);
 
                         if (mysqli_num_rows($result) > 0) {
@@ -391,20 +370,10 @@ $query = "SELECT * FROM jobs WHERE Active = 1 AND DatePosted >= DATE_SUB(NOW(), 
 
             // To find jobs
             function filterJobs() {
-                const searchValue = document.getElementById('searchJobs').value.trim().toLowerCase();
-                const jobItems = document.querySelectorAll('.job-item');
-
-                jobItems.forEach(item => {
-                    const title = item.querySelector('h5').innerText.toLowerCase();
-                    const description = item.querySelector('.fa-info-circle').parentNode.innerText.toLowerCase();
-
-                    if (title.includes(searchValue) || description.includes(searchValue)) {
-                        item.style.display = 'block';
-                    } else {
-                        item.style.display = 'none';
-                    }
-                });
+                let searchQuery = document.getElementById("searchJobs").value.trim();
+                window.location.href = "job-list_1.php?search=" + encodeURIComponent(searchQuery);
             }
+
     </script>
 </body>
 </html>
