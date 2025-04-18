@@ -5,7 +5,7 @@ include("functions.php");
 
 if (isset($_SESSION['User_ID'])) {
     $user_id = $_SESSION['User_ID'];
-
+    echo json_encode(['loggedIn' => isset($_SESSION['user_id'])]);
     // Prepare statement to fetch jobs matching user skills
     $query = "
         SELECT DISTINCT j.* 
@@ -315,17 +315,16 @@ if (isset($_SESSION['User_ID'])) {
                 });
 
                 //apply button -> bring to login pg
-                $('#apply-now-btn').click(function() {
-                    var isLoggedIn = <?php echo isset($_SESSION['user_id']) ? 'true' : 'false'; ?>;
-
-                    if (isLoggedIn) {
-                        alert('Apply now functionality goes here.');
-                    } else {
-                        // Prompt user to log in first
-                        if (confirm('You need to log in first to apply. Click OK to proceed to login page.')) {
-                            window.location.href = 'login.php';
+                $('#apply-now-btn').click(function () {
+                    $.get('check_login.php', function (response) {
+                        if (response.loggedIn) {
+                            alert('Apply now functionality goes here.');
+                        } else {
+                            if (confirm('You need to log in first to apply. Click OK to proceed to login page.')) {
+                                window.location.href = 'login.php';
+                            }
                         }
-                    }
+                    });
                 });
             });
         </script>
