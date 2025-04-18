@@ -5,7 +5,6 @@ include("functions.php");
 
 if (isset($_SESSION['User_ID'])) {
     $user_id = $_SESSION['User_ID'];
-    echo json_encode(['loggedIn' => isset($_SESSION['user_id'])]);
     // Prepare statement to fetch jobs matching user skills
     $query = "
         SELECT DISTINCT j.* 
@@ -246,7 +245,7 @@ if (isset($_SESSION['User_ID'])) {
                         <p id="modal-salary"></p>
                     </div>
                     <div class="modal-footer">
-                        <button id="apply-now-btn" class="btn btn-orange">Apply Now</button>
+                        <button id="apply-now-btn" data-logged-in="<?php echo isset($_SESSION['user_id']) ? 'true' : 'false'; ?>">Apply Now</button>
                     </div>
                 </div>
             </div>
@@ -316,16 +315,17 @@ if (isset($_SESSION['User_ID'])) {
 
                 //apply button -> bring to login pg
                 $('#apply-now-btn').click(function () {
-                    $.get('check_login.php', function (response) {
-                        if (response.loggedIn) {
-                            alert('Apply now functionality goes here.');
-                        } else {
-                            if (confirm('You need to log in first to apply. Click OK to proceed to login page.')) {
-                                window.location.href = 'login.php';
-                            }
+                    var isLoggedIn = $(this).data('logged-in') === true || $(this).data('logged-in') === 'true';
+
+                    if (isLoggedIn) {
+                        alert('Apply now functionality goes here.');
+                    } else {
+                        if (confirm('You need to log in first to apply. Click OK to proceed to login page.')) {
+                            window.location.href = 'login.php';
                         }
-                    });
+                    }
                 });
+
             });
         </script>
     </div>
