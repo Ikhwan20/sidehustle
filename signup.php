@@ -77,7 +77,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // Insert User Data
     $stmt = $con->prepare("INSERT INTO users (Username, Email, Password, Gender, Age, Resume, ProfilePic) VALUES (?, ?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("ssssiis", $username, $email, $password, $gender, $age, $resume, $profilePic);
+    $stmt->bind_param("ssssiss", $username, $email, $password, $gender, $age, $resume, $profilePic);
     
     if ($stmt->execute()) {
         $user_id = $stmt->insert_id;

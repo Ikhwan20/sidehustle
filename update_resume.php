@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['resume'])) {
 
     if ($file_error === UPLOAD_ERR_OK) {
         // Move uploaded file to desired directory
-        $upload_directory = 'path_to_resumes/'; // Adjust this to your directory
+        $upload_directory = 'uploads/'; // Adjust this to your directory
         $new_resume_path = $upload_directory . $file_name;
 
         if (move_uploaded_file($file_tmp, $new_resume_path)) {
