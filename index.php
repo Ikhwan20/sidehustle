@@ -316,7 +316,7 @@ if (isset($_SESSION['User_ID'])) {
 
                 //apply button -> bring to login pg
                 $('#apply-now-btn').click(function() {
-                    var isLoggedIn = false;
+                    var isLoggedIn = <?php echo isset($_SESSION['user_id']) ? 'true' : 'false'; ?>;
 
                     if (isLoggedIn) {
                         alert('Apply now functionality goes here.');
