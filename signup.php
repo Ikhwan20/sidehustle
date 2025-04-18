@@ -32,19 +32,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // Resume Upload Handling
     if (!empty($_FILES["resume"]["name"])) {
+        if ($_FILES["resume"]["error"] !== UPLOAD_ERR_OK) {
+            die("Resume upload failed. Error code: " . $_FILES["resume"]["error"]);
+        }
+    
         $resumeName = basename($_FILES["resume"]["name"]);
         $resumeTmpName = $_FILES["resume"]["tmp_name"];
         $resumeType = $_FILES["resume"]["type"];
         $resumeSize = $_FILES["resume"]["size"];
-
+    
+        echo "Temp name: $resumeTmpName<br>";
+        echo "Name: $resumeName<br>";
+        echo "Size: $resumeSize<br>";
+        echo "Type: $resumeType<br>";
+    
         if ($resumeSize <= 5 * 1024 * 1024 && $resumeType === "application/pdf") {
-            if (!is_dir("uploads")) mkdir("uploads", 0777);
+            if (!is_dir("uploads")) mkdir("uploads", 0777, true);
             $resume = "uploads/" . $resumeName;
-            move_uploaded_file($resumeTmpName, $resume);
+    
+            if (!move_uploaded_file($resumeTmpName, $resume)) {
+                die("Failed to move uploaded resume. Check permissions.");
+            }
         } else {
             die("Invalid resume file. Must be a PDF and under 5MB.");
         }
     }
+    
 
     // Profile Picture Upload Handling
     if (!empty($_FILES["profile-pic"]["name"])) {
