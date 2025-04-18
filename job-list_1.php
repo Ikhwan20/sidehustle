@@ -3,8 +3,6 @@ include("session_handler.php");
 include("connection.php");
 include("functions.php");
 
-echo json_encode(['loggedIn' => isset($_SESSION['user_id'])]);
-
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
 $query = "SELECT * FROM jobs WHERE Active = 1";
@@ -328,7 +326,7 @@ if (!isset($_SESSION['User_ID'])) {
             });
 
             $('#apply-now-btn').click(function() {
-                if (loggedIn) {
+                if (userLoggedIn) {
                     selectedJobId = $('#details-modal').find('.details-btn').data('job-id');
                     $('#details-modal').fadeOut();
                     $('#particulars-modal').fadeIn();
