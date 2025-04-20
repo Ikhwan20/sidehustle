@@ -376,6 +376,8 @@ if (!isset($_SESSION['User_ID'])) {
                     processData: false,
                     contentType: false,
                     success: function(response) {
+                        console.log("Raw response:", response); // Log the raw response
+                        
                         try {
                             var result = JSON.parse(response);
                             if(result.status === 'success') {
@@ -386,10 +388,14 @@ if (!isset($_SESSION['User_ID'])) {
                             }
                         } catch(e) {
                             console.error('Error parsing response:', e);
+                            console.error('Response that failed to parse:', response);
                             alert('Application submitted but there was an issue with the response.');
                         }
                     },
-                    error: function() {
+                    error: function(xhr, status, error) {
+                        console.error("XHR Status:", status);
+                        console.error("Error:", error);
+                        console.error("Response:", xhr.responseText);
                         alert('Error submitting application. Please try again.');
                     }
                 });

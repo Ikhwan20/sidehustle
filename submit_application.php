@@ -1,4 +1,5 @@
 <?php
+ob_start();
 session_start();
 
 require 'vendor/autoload.php'; 
@@ -84,7 +85,7 @@ if ($insert_stmt->execute()) {
 $insert_stmt->close();
 $con->close();
 
-function sendEmail($to, $subject, $body) {
+function sendEmail($to, $subject, $body, $attachment = null) {
     $mail = new PHPMailer(true);
     try {
         // Enable debugging
@@ -117,4 +118,14 @@ function sendEmail($to, $subject, $body) {
         error_log("Email sending failed: " . $mail->ErrorInfo);
     }
 }
+
+// Clear any buffered output
+ob_end_clean();
+
+// Now return only the JSON response
+header('Content-Type: application/json');
+echo json_encode(['status' => 'success', 'message' => 'Application submitted successfully.']);
+exit;
+
 ?>
+
