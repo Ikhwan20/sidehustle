@@ -389,7 +389,6 @@ if (!isset($_SESSION['User_ID'])) {
                         } catch(e) {
                             console.error('Error parsing response:', e);
                             console.error('Response that failed to parse:', response);
-                            alert('Application submitted but there was an issue with the response.');
                         }
                     },
                     error: function(xhr, status, error) {
