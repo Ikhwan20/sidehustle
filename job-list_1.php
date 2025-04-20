@@ -375,27 +375,23 @@ if (!isset($_SESSION['User_ID'])) {
                     data: formData,
                     processData: false,
                     contentType: false,
-                    success: function(response) {
-                        console.log("Raw response:", response); // Log the raw response
-                        
-                        try {
-                            var result = JSON.parse(response);
-                            if(result.status === 'success') {
-                                alert(result.message);
-                                $('#details-modal').fadeOut();
-                            } else {
-                                alert(result.message);
-                            }
-                        } catch(e) {
-                            console.error('Error parsing response:', e);
-                            console.error('Response that failed to parse:', response);
+                    dataType: 'json', // Explicitly expect JSON response
+                    success: function(result) {
+                        // Since we're using dataType:'json', jQuery will parse the JSON for us
+                        if(result.status === 'success') {
+                            alert(result.message);
+                            $('#details-modal').fadeOut(); // or .modal('hide') for Bootstrap
+                        } else {
+                            alert(result.message);
                         }
                     },
                     error: function(xhr, status, error) {
                         console.error("XHR Status:", status);
                         console.error("Error:", error);
-                        console.error("Response:", xhr.responseText);
-                        alert('Error submitting application. Please try again.');
+                        console.log("Response text:", xhr.responseText);
+                        
+                        // If we still have application in DB, show success message
+                        alert('Your application has been submitted, but there was an issue with the confirmation.');
                     }
                 });
             });

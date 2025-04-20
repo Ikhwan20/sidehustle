@@ -1,5 +1,9 @@
 <?php
+// Turn off output buffering and clear any previous output
+ob_end_clean();
+// Start fresh buffer
 ob_start();
+
 session_start();
 
 require 'vendor/autoload.php'; 
@@ -8,16 +12,21 @@ use PHPMailer\PHPMailer\Exception;
 
 include("connection.php");
 
+// Turn off any error output
+error_reporting(0);
+ini_set('display_errors', 0);
+
+// Store any errors to handle later
+$errors = [];
+
 if (!isset($_SESSION['User_ID'])) {
-    echo json_encode(['status' => 'error', 'message' => 'User not logged in.']);
-    exit;
+    outputJsonAndExit(['status' => 'error', 'message' => 'User not logged in.']);
 }
 
 $user_id = $_SESSION['User_ID'];
 
 if (!isset($_POST['job-id']) || empty($_POST['job-id'])) {
-    echo json_encode(['status' => 'error', 'message' => 'Job ID not provided.']);
-    exit;
+    outputJsonAndExit(['status' => 'error', 'message' => 'Job ID not provided.']);
 }
 
 $job_id = $_POST['job-id'];
@@ -36,7 +45,6 @@ $job = $job_result->fetch_assoc();
 $job_title = $job['Title'];
 $job_stmt->close();
 
-
 // Check if the user has already applied for this job
 $check_query = "SELECT * FROM job_applications WHERE Job_ID = ? AND User_ID = ?";
 $check_stmt = $con->prepare($check_query);
@@ -45,8 +53,7 @@ $check_stmt->execute();
 $check_result = $check_stmt->get_result();
 
 if ($check_result->num_rows > 0) {
-    echo json_encode(['status' => 'error', 'message' => 'You have already applied for this job.']);
-    exit;
+    outputJsonAndExit(['status' => 'error', 'message' => 'You have already applied for this job.']);
 }
 
 // Upload resume
@@ -54,8 +61,7 @@ $target_dir = "uploads/";
 $target_file = $target_dir . basename($resume);
 
 if (!move_uploaded_file($resume_temp, $target_file)) {
-    echo json_encode(['status' => 'error', 'message' => 'Error uploading resume.']);
-    exit;
+    outputJsonAndExit(['status' => 'error', 'message' => 'Error uploading resume.']);
 }
 
 // Insert application into database
@@ -64,33 +70,38 @@ $insert_stmt = $con->prepare($insert_query);
 $insert_stmt->bind_param("iis", $job_id, $user_id, $target_file);
 
 if ($insert_stmt->execute()) {
-    // Send email notifications
-    $admin_email = "meiyun.nmy@gmail.com";
-    // Email to applicant
-    $applicant_subject = "Application Submitted for $job_title";
-    $applicant_body = "Dear $name,\n\nThank you for applying for the position of $job_title. We have received your application and will review it shortly.\n\nBest regards,\nJob Portal Team";
+    // Log success to a file instead of echoing
+    error_log("Application submitted successfully for user: $user_id, job: $job_id");
+    
+    // Try to send emails silently (don't output anything)
+    try {
+        $admin_email = "meiyun.nmy@gmail.com";
+        $applicant_subject = "Application Submitted for $job_title";
+        $applicant_body = "Dear $name,\n\nThank you for applying for the position of $job_title. We have received your application and will review it shortly.\n\nBest regards,\nJob Portal Team";
+        $admin_subject = "New Application for $job_title";
+        $admin_body = "Dear Admin,\n\nUser $name ($email) has applied for the position of $job_title.\n\nBest regards,\nJob Portal System";
 
-    // Email to admin
-    $admin_subject = "New Application for $job_title";
-    $admin_body = "Dear Admin,\n\nUser $name ($email) has applied for the position of $job_title.\n\nBest regards,\nJob Portal System";
-
-    sendEmail($email, $applicant_subject, $applicant_body, $target_file);
-    sendEmail($admin_email, $admin_subject, $admin_body, $target_file);
-
-    echo json_encode(['status' => 'success', 'message' => 'Application submitted successfully.']);
+        sendEmailSilently($email, $applicant_subject, $applicant_body, $target_file);
+        sendEmailSilently($admin_email, $admin_subject, $admin_body, $target_file);
+    } catch (Exception $e) {
+        error_log("Email error: " . $e->getMessage());
+        // Continue anyway - don't break the JSON response
+    }
+    
+    outputJsonAndExit(['status' => 'success', 'message' => 'Application submitted successfully.']);
 } else {
-    echo json_encode(['status' => 'error', 'message' => 'Error applying for the job.']);
+    outputJsonAndExit(['status' => 'error', 'message' => 'Error applying for the job.']);
 }
 
 $insert_stmt->close();
 $con->close();
 
-function sendEmail($to, $subject, $body, $attachment = null) {
-    $mail = new PHPMailer(true);
+function sendEmailSilently($to, $subject, $body, $attachment = null) {
     try {
-        // Enable debugging
-        $mail->SMTPDebug = 2; // Set to 3 for more details
-        $mail->Debugoutput = 'html';
+        $mail = new PHPMailer(true);
+        // Silent mode
+        $mail->SMTPDebug = 0;
+        
         // SMTP Configuration
         $mail->isSMTP();
         $mail->Host       = 'smtp.gmail.com';
@@ -112,20 +123,23 @@ function sendEmail($to, $subject, $body, $attachment = null) {
         }
 
         $mail->send();
-        echo "Email sent successfully to $to <br>";
+        error_log("Email sent silently to $to");
+        return true;
     } catch (Exception $e) {
-        echo "Mailer Error: " . $mail->ErrorInfo . "<br>";
-        error_log("Email sending failed: " . $mail->ErrorInfo);
+        error_log("Silent Mailer Error: " . $e->getMessage());
+        return false;
     }
 }
 
-// Clear any buffered output
-ob_end_clean();
-
-// Now return only the JSON response
-header('Content-Type: application/json');
-echo json_encode(['status' => 'success', 'message' => 'Application submitted successfully.']);
-exit;
-
+function outputJsonAndExit($data) {
+    // Clear any buffered output
+    ob_end_clean();
+    
+    // Set proper content type
+    header('Content-Type: application/json');
+    
+    // Output the JSON and exit
+    echo json_encode($data);
+    exit;
+}
 ?>
-

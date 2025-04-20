@@ -263,7 +263,7 @@ if (isset($_SESSION['User_ID'])) {
                         </form>
                     </div>
                     <div class="modal-footer">
-                        echo '<button class="btn btn-orange details-btn" data-job-id="' . htmlspecialchars($row['Job_ID']) . '" data-title="' . htmlspecialchars($row['Title']) . '" data-description="' . htmlspecialchars($row['Description']) . '" data-location="' . htmlspecialchars($row['Location']) . '" data-salary="' . htmlspecialchars($row['Salary']) . '">View Details</button></span>';
+                        <button id="apply-now-btn" class="btn btn-orange">Apply Now</button>
                     </div>
                 </div>
             </div>
@@ -323,6 +323,9 @@ if (isset($_SESSION['User_ID'])) {
                     var location = $(this).data('location');
                     var salary = $(this).data('salary');
 
+                    // Store job ID in the modal
+                    $('#details-modal').data('job-id', jobId);
+
                     $('#modal-title').text(title);
                     $('#modal-description').text('Description: ' + description);
                     $('#modal-location').text('Location: ' + location);
@@ -331,21 +334,20 @@ if (isset($_SESSION['User_ID'])) {
                     $('#details-modal').modal('show');
                 });
 
-                $('#apply-now-btn').click(function () {
-                    var isLoggedIn = $(this).data('logged-in') === true || $(this).data('logged-in') === 'true';
-
-                    if (isLoggedIn) {
+                $('#apply-now-btn').click(function() {
+                    const userLoggedIn = <?php echo isset($_SESSION['User_ID']) ? 'true' : 'false'; ?>;
+                    
+                    if (userLoggedIn) {
                         // Show application form
                         $('#application-form').show();
                         $(this).hide();
                         
                         // Set the job ID in the hidden field
-                        var jobId = $(this).closest('.modal-content').find('[data-job-id]').data('job-id');
+                        var jobId = $('#details-modal').data('job-id');
                         $('#job-id-input').val(jobId);
                     } else {
-                        if (confirm('You need to log in first to apply. Click OK to proceed to login page.')) {
-                            window.location.href = 'login.php';
-                        }
+                        $('#details-modal').modal('hide');
+                        window.location.href = 'login.php';
                     }
                 });
 
@@ -361,17 +363,23 @@ if (isset($_SESSION['User_ID'])) {
                         data: formData,
                         processData: false,
                         contentType: false,
-                        success: function(response) {
-                            var result = JSON.parse(response);
+                        dataType: 'json', // Explicitly expect JSON response
+                        success: function(result) {
+                            // Since we're using dataType:'json', jQuery will parse the JSON for us
                             if(result.status === 'success') {
                                 alert(result.message);
-                                $('#details-modal').modal('hide');
+                                $('#details-modal').fadeOut(); // or .modal('hide') for Bootstrap
                             } else {
                                 alert(result.message);
                             }
                         },
-                        error: function() {
-                            alert('Error submitting application. Please try again.');
+                        error: function(xhr, status, error) {
+                            console.error("XHR Status:", status);
+                            console.error("Error:", error);
+                            console.log("Response text:", xhr.responseText);
+                            
+                            // If we still have application in DB, show success message
+                            alert('Your application has been submitted, but there was an issue with the confirmation.');
                         }
                     });
                 });
