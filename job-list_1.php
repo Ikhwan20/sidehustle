@@ -202,7 +202,7 @@ if (!isset($_SESSION['User_ID'])) {
                                 echo '</div>';
                                 echo '<div class="col-sm-12 col-md-4 d-flex flex-column align-items-start align-items-md-end justify-content-center">';
                                 echo '<div class="d-flex mb-3">';
-                                echo '<button class="btn btn-orange details-btn" data-title="' . $row['Title'] . '" data-company="' . $row['Company'] . '" data-description="' . $row['Description'] . '" data-location="' . $row['Location'] . '" data-salary="' . $row['Salary'] . '">View Details</button>';
+                                echo '<button class="btn btn-orange details-btn" data-job-id="' . $row['Job_ID'] . '" data-title="' . $row['Title'] . '" data-company="' . $row['Company'] . '" data-description="' . $row['Description'] . '" data-location="' . $row['Location'] . '" data-salary="' . $row['Salary'] . '">View Details</button>';
                                 echo '</div>';
                                 echo '</div>';
                                 echo '</div>';
@@ -223,10 +223,28 @@ if (!isset($_SESSION['User_ID'])) {
                                 <p id="modal-description"></p>
                                 <p id="modal-location"></p>
                                 <p id="modal-salary"></p>
+                                
+                                <!-- Add application form -->
+                                <form id="application-form" action="submit_application.php" method="POST" enctype="multipart/form-data" style="display:none;">
+                                    <input type="hidden" id="job-id-input" name="job-id">
+                                    <div class="mb-3">
+                                        <label for="full-name" class="form-label">Full Name</label>
+                                        <input type="text" class="form-control" id="full-name" name="full-name" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="email" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="email" name="email" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="resume" class="form-label">Resume (PDF)</label>
+                                        <input type="file" class="form-control" id="resume" name="resume" accept=".pdf,.doc,.docx" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-orange">Submit Application</button>
+                                </form>
+                                
                                 <button id="apply-now-btn" class="btn btn-orange">Apply Now</button>
                             </div>
                         </div>
-
                         <div class="modal" id="login-modal">
                             <div class="modal-content">
                                 <span class="close" id="close-login-modal">&times;</span>
@@ -315,9 +333,12 @@ if (!isset($_SESSION['User_ID'])) {
                 const description = $(this).data('description');
                 const location = $(this).data('location');
                 const salary = $(this).data('salary');
+                
+                // Store job ID in a data attribute
+                $('#details-modal').data('job-id', $(this).data('job-id'));
 
                 $('#modal-title').text(title);
-                $('#modal-company').text(company);
+                $('#modal-company').text(company ? company : '');
                 $('#modal-description').text(description);
                 $('#modal-location').text(location);
                 $('#modal-salary').text('RM ' + salary);
@@ -326,14 +347,52 @@ if (!isset($_SESSION['User_ID'])) {
             });
 
             $('#apply-now-btn').click(function() {
+                const userLoggedIn = <?php echo isset($_SESSION['User_ID']) ? 'true' : 'false'; ?>;
+                
                 if (userLoggedIn) {
-                    selectedJobId = $('#details-modal').find('.details-btn').data('job-id');
-                    $('#details-modal').fadeOut();
-                    $('#particulars-modal').fadeIn();
+                    // Show application form
+                    $('#application-form').show();
+                    $(this).hide();
+                    
+                    // Set the job ID in the hidden field
+                    var jobId = $('#details-modal').data('job-id');
+                    $('#job-id-input').val(jobId);
                 } else {
                     $('#details-modal').fadeOut();
                     $('#login-modal').fadeIn();
                 }
+            });
+
+            // Add form submission handler
+            $('#application-form').on('submit', function(e) {
+                e.preventDefault();
+                
+                var formData = new FormData(this);
+                
+                $.ajax({
+                    url: 'submit_application.php',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        try {
+                            var result = JSON.parse(response);
+                            if(result.status === 'success') {
+                                alert(result.message);
+                                $('#details-modal').fadeOut();
+                            } else {
+                                alert(result.message);
+                            }
+                        } catch(e) {
+                            console.error('Error parsing response:', e);
+                            alert('Application submitted but there was an issue with the response.');
+                        }
+                    },
+                    error: function() {
+                        alert('Error submitting application. Please try again.');
+                    }
+                });
             });
 
             $('#close-details-modal, #close-login-modal, #close-register-modal, #close-particulars-modal').click(function() {

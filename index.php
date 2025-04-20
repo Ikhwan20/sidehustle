@@ -243,9 +243,27 @@ if (isset($_SESSION['User_ID'])) {
                         <p id="modal-description"></p>
                         <p id="modal-location"></p>
                         <p id="modal-salary"></p>
+                        
+                        <!-- Add application form -->
+                        <form id="application-form" action="submit_application.php" method="POST" enctype="multipart/form-data" style="display:none;">
+                            <input type="hidden" id="job-id-input" name="job-id">
+                            <div class="mb-3">
+                                <label for="full-name" class="form-label">Full Name</label>
+                                <input type="text" class="form-control" id="full-name" name="full-name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="resume" class="form-label">Resume (PDF)</label>
+                                <input type="file" class="form-control" id="resume" name="resume" accept=".pdf,.doc,.docx" required>
+                            </div>
+                            <button type="submit" class="btn btn-orange">Submit Application</button>
+                        </form>
                     </div>
                     <div class="modal-footer">
-                        <button id="apply-now-btn" data-logged-in="<?php echo isset($_SESSION['User_ID']) ? 'true' : 'false'; ?>">Apply Now</button>
+                        <span><button class="btn btn-orange details-btn" data-job-id="' . htmlspecialchars($row['Job_ID']) . '" data-title="' . htmlspecialchars($row['Title']) . '" data-description="' . htmlspecialchars($row['Description']) . '" data-location="' . htmlspecialchars($row['Location']) . '" data-salary="' . htmlspecialchars($row['Salary']) . '">View Details</button></span>
                     </div>
                 </div>
             </div>
@@ -313,12 +331,17 @@ if (isset($_SESSION['User_ID'])) {
                     $('#details-modal').modal('show');
                 });
 
-                //apply button -> bring to login pg
                 $('#apply-now-btn').click(function () {
                     var isLoggedIn = $(this).data('logged-in') === true || $(this).data('logged-in') === 'true';
 
                     if (isLoggedIn) {
-                        alert('Apply now functionality goes here.');
+                        // Show application form
+                        $('#application-form').show();
+                        $(this).hide();
+                        
+                        // Set the job ID in the hidden field
+                        var jobId = $(this).closest('.modal-content').find('[data-job-id]').data('job-id');
+                        $('#job-id-input').val(jobId);
                     } else {
                         if (confirm('You need to log in first to apply. Click OK to proceed to login page.')) {
                             window.location.href = 'login.php';
@@ -326,6 +349,32 @@ if (isset($_SESSION['User_ID'])) {
                     }
                 });
 
+                // Add form submission handler
+                $('#application-form').on('submit', function(e) {
+                    e.preventDefault();
+                    
+                    var formData = new FormData(this);
+                    
+                    $.ajax({
+                        url: 'submit_application.php',
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function(response) {
+                            var result = JSON.parse(response);
+                            if(result.status === 'success') {
+                                alert(result.message);
+                                $('#details-modal').modal('hide');
+                            } else {
+                                alert(result.message);
+                            }
+                        },
+                        error: function() {
+                            alert('Error submitting application. Please try again.');
+                        }
+                    });
+                });
             });
         </script>
     </div>
