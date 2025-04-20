@@ -295,7 +295,7 @@ if (!isset($_SESSION['User_ID'])) {
     <script>
         // Check if user logged in
         $(document).ready(function() {
-            const userLoggedIn = <?php echo isset($_SESSION['user']) ? 'true' : 'false'; ?>;
+            const userLoggedIn = <?php echo isset($_SESSION['User_ID']) ? 'true' : 'false'; ?>;
             const username = <?php echo isset($_SESSION['user']) ? json_encode($_SESSION['user']['username']) : 'null'; ?>;
 
             if (userLoggedIn) {

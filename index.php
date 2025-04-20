@@ -245,7 +245,7 @@ if (isset($_SESSION['User_ID'])) {
                         <p id="modal-salary"></p>
                     </div>
                     <div class="modal-footer">
-                        <button id="apply-now-btn" data-logged-in="<?php echo isset($_SESSION['user_id']) ? 'true' : 'false'; ?>">Apply Now</button>
+                        <button id="apply-now-btn" data-logged-in="<?php echo isset($_SESSION['User_ID']) ? 'true' : 'false'; ?>">Apply Now</button>
                     </div>
                 </div>
             </div>
