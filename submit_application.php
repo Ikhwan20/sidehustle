@@ -73,7 +73,7 @@ if ($insert_stmt->execute()) {
     // Log success to a file instead of echoing
     error_log("Application submitted successfully for user: $user_id, job: $job_id");
     
-    // Try to send emails silently (don't output anything)
+    // Try to send emails silently (before outputting JSON response)
     try {
         $admin_email = "meiyun.nmy@gmail.com";
         $applicant_subject = "Application Submitted for $job_title";
@@ -112,7 +112,7 @@ function sendEmailSilently($to, $subject, $body, $attachment = null) {
         $mail->Port       = 587;
 
         // Email Content
-        $mail->setFrom('sidehustle@gmail.com', 'Job Portal');
+        $mail->setFrom('ngmeiyun1@gmail.com', 'Job Portal');
         $mail->addAddress($to);
         $mail->Subject = $subject;
         $mail->Body    = $body;

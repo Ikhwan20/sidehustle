@@ -363,12 +363,12 @@ if (isset($_SESSION['User_ID'])) {
                         data: formData,
                         processData: false,
                         contentType: false,
-                        dataType: 'json', // Explicitly expect JSON response
+                        dataType: 'json',
                         success: function(result) {
-                            // Since we're using dataType:'json', jQuery will parse the JSON for us
                             if(result.status === 'success') {
                                 alert(result.message);
-                                $('#details-modal').fadeOut(); // or .modal('hide') for Bootstrap
+                                // Use Bootstrap's modal hide method instead of fadeOut
+                                $('#details-modal').modal('hide');
                             } else {
                                 alert(result.message);
                             }
@@ -378,8 +378,9 @@ if (isset($_SESSION['User_ID'])) {
                             console.error("Error:", error);
                             console.log("Response text:", xhr.responseText);
                             
-                            // If we still have application in DB, show success message
                             alert('Your application has been submitted, but there was an issue with the confirmation.');
+                            // Also use modal('hide') here
+                            $('#details-modal').modal('hide');
                         }
                     });
                 });
