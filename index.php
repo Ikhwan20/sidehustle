@@ -12,6 +12,7 @@ if (isset($_SESSION['User_ID'])) {
         JOIN job_skills js ON j.Job_ID = js.Job_ID
         JOIN user_skills us ON js.Skill_ID = us.Skill_ID
         WHERE us.User_ID = ?
+        ORDER BY j.Title ASC
     ";
 
     $stmt = $con->prepare($query);
@@ -24,12 +25,13 @@ if (isset($_SESSION['User_ID'])) {
     $result = $stmt->get_result();
 } else {
     // If no user is logged in, show all jobs
-    $query = "SELECT * FROM jobs";
+    $query = "SELECT * FROM jobs ORDER BY Title ASC";
     $result = mysqli_query($con, $query);
     if ($result === false) {
         die("Query failed: " . htmlspecialchars($con->error)); // Debugging line
     }
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -176,6 +178,15 @@ if (isset($_SESSION['User_ID'])) {
                             <div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg" style="background-image: url(img/waiter.jpg); background-size: cover;">
                                 <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
                                     <h3 class="pt-5 mt-5 mb-4 display-6 lh-md fw-bold fs-3" style="color: antiquewhite;">Waiter</h3>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col">
+                        <a href="job-list_1.php?search=it" class="text-decoration-none">
+                            <div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg" style="background-image: url(img/IT.jpg); background-size: cover;">
+                                <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
+                                    <h3 class="pt-5 mt-5 mb-4 display-6 lh-md fw-bold fs-3" style="color: antiquewhite;">IT</h3>
                                 </div>
                             </div>
                         </a>
