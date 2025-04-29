@@ -91,13 +91,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $mail->isSMTP();
                     $mail->Host = 'smtp.gmail.com';
                     $mail->SMTPAuth = true;
-                    $mail->Username = 'puterifiqrina02@gmail.com'; // Your Gmail email address
-                    $mail->Password = 'loza xapn grjh rxea'; // Your Gmail password or app-specific password
+                    $mail->Username = 'ngmeiyun1@gmail.com'; // Your Gmail email address
+                    $mail->Password = 'tuvz reht znpj hgdk'; // Your Gmail password or app-specific password
                     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
                     $mail->Port = 587;
                     
                     // Sender and recipient settings
-                    $mail->setFrom('your_email@gmail.com', 'Your Name'); // Replace with your name
+                    $mail->setFrom('ngmeiyun1@gmail.com', 'Side Hustle'); // Replace with your name
                     $mail->addAddress($applicant_email, $applicant_username);
                     
                     // Email content

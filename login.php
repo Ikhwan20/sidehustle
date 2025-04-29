@@ -124,7 +124,6 @@ function sanitizeInput($data) {
                 <div class="navbar-nav ms-auto p-4 p-lg-0">
                     <a href="index.php" class="nav-item nav-link active">Home</a>
                     <a href="about.html" class="nav-item nav-link">About</a>
-                    <a href="job-list.html" class="nav-item nav-link">Job</a>
                     <a href="contact.html" class="nav-item nav-link">Contact</a>
                     <div id="guest-nav">
                         <a href="login.php" class="nav-item nav-link" style="color: #FE7A36;">Sign In</a>

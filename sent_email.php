@@ -1,6 +1,6 @@
 <?php
-require_once 'vendor/autoload.php'; // Adjust the path as per your installation
-require_once 'config.php'; // Include your configuration file
+require_once 'vendor/autoload.php'; 
+require_once 'config.php'; 
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
