@@ -107,12 +107,12 @@ function sendEmailSilently($to, $subject, $body, $attachment = null) {
         $mail->Host       = 'smtp.gmail.com';
         $mail->SMTPAuth   = true;
         $mail->Username   = 'ngmeiyun1@gmail.com';
-        $mail->Password   = 'fmlv tzwd niqb wnnm'; 
+        $mail->Password   = 'tuvz reht znpj hgdk'; 
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port       = 587;
 
         // Email Content
-        $mail->setFrom('ngmeiyun1@gmail.com', 'Job Portal');
+        $mail->setFrom('ngmeiyun1@gmail.com', 'Side Hustle');
         $mail->addAddress($to);
         $mail->Subject = $subject;
         $mail->Body    = $body;
