@@ -49,6 +49,17 @@ $con->close();
     <title>User Dashboard</title>
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css">
+    <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', async function () {
+        const skillSuggestions = await fetch('skills_list.php').then(res => res.json());
+        new Tagify(document.querySelector('#skillsInput'), {
+            whitelist: skillSuggestions,
+            dropdown: { enabled: 0 }
+        });
+    });
+    </script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 </head>
 <body>
@@ -76,18 +87,24 @@ $con->close();
                                 <p><?php echo htmlspecialchars($user_data['Email'] ?? ''); ?></p>
                             </div>
                             <div class="mb-3">
-                                <label for="resume" class="form-label"><b>Resume:</b></label><br>
-                                <?php 
-                                $resume_file = htmlspecialchars($user_data['Resume']);
-                                $resume_path = __DIR__ . '/' . $resume_file;
-                                
-                                if (!empty($resume_file) && file_exists($resume_path)): ?>
-                                    <p>
-                                        <a href="<?php echo $resume_file; ?>" target="_blank"><?php echo basename($resume_file); ?></a>
-                                    </p>
-                                <?php else: ?>
-                                    <p>No resume uploaded or file not found</p>
-                                <?php endif; ?>
+                                <form method="POST" action="update_resume.php" enctype="multipart/form-data">
+                                    <label for="resume" class="form-label"><b>Resume:</b></label><br>
+                                    <?php 
+                                    if (!empty($resume_file) && file_exists($resume_path)): ?>
+                                        <p><a href="<?php echo $resume_file; ?>" target="_blank"><?php echo basename($resume_file); ?></a></p>
+                                    <?php else: ?>
+                                        <p>No resume uploaded or file not found</p>
+                                    <?php endif; ?>
+                                    <input type="file" name="resume" class="form-control mt-2" required>
+                                    <button type="submit" class="btn btn-primary mt-2">Upload New Resume</button>
+                                </form>
+                            </div>
+                            <div class="mb-3">
+                                <form method="POST" action="update_skills.php">
+                                    <label for="skills" class="form-label"><b>Skills:</b></label>
+                                    <input id="skillsInput" name="skills" class="form-control" placeholder="Enter skills..." value="<?php echo htmlspecialchars($user_data['Skills'] ?? ''); ?>" />
+                                    <button type="submit" class="btn btn-success mt-2">Update Skills</button>
+                                </form>
                             </div>
                             <div class="mb-3">
                                 <label for="profilePic" class="form-label"><b>Profile Picture:</b></label><br>

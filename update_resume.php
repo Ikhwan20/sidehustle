@@ -15,31 +15,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['resume'])) {
     $file_error = $_FILES['resume']['error'];
 
     if ($file_error === UPLOAD_ERR_OK) {
-        // Move uploaded file to desired directory
-        $upload_directory = 'uploads/'; // Adjust this to your directory
-        $new_resume_path = $upload_directory . $file_name;
+        $upload_directory = 'uploads/';
+        $file_ext = pathinfo($file_name, PATHINFO_EXTENSION);
+        $unique_name = 'resume_' . $user_id . '_' . time() . '.' . $file_ext;
+        $new_resume_path = $upload_directory . $unique_name;
+
+        // Optional: delete old resume file
+        $stmt = $con->prepare("SELECT Resume FROM users WHERE User_ID = ?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $stmt->bind_result($old_resume);
+        if ($stmt->fetch() && !empty($old_resume) && file_exists($old_resume)) {
+            unlink($old_resume);
+        }
+        $stmt->close();
 
         if (move_uploaded_file($file_tmp, $new_resume_path)) {
-            // Update database with new resume path
             $update_query = "UPDATE users SET Resume = ? WHERE User_ID = ?";
             $update_stmt = $con->prepare($update_query);
             $update_stmt->bind_param("si", $new_resume_path, $user_id);
-            if ($update_stmt->execute()) {
-                // Resume updated successfully
-                echo "Resume updated successfully.";
-            } else {
-                echo "Failed to update resume.";
-            }
+            $update_stmt->execute();
             $update_stmt->close();
-        } else {
-            echo "Error moving file to upload directory.";
         }
-    } else {
-        echo "Error uploading file.";
     }
-} else {
-    echo "Invalid request.";
 }
 
 $con->close();
-?>
+header("Location: dashboard.php");
+exit;

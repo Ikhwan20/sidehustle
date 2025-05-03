@@ -1,61 +1,99 @@
 <?php
 session_start();
 
-// Check if the employer is logged in
-if(!isset($_SESSION['employer_id'])) {
-    header("Location: employer_login.php");
-    die;
-}
-
 include("connection.php");
 include("functions.php");
 
-// Handle Job Post
-if($_SERVER['REQUEST_METHOD'] == "POST") {
-    // Validate and escape user inputs
-    $employerId = $_SESSION['employer_id'];
-    $jobTitle = mysqli_real_escape_string($con, $_POST['jobTitle']);
-    $companyName = mysqli_real_escape_string($con, $_POST['companyName']);
-    $jobDescription = mysqli_real_escape_string($con, $_POST['jobDescription']);
-    $jobRequirements = mysqli_real_escape_string($con, $_POST['jobRequirements']);
-    $salary = mysqli_real_escape_string($con, $_POST['salary']);
-    $salaryUnit = mysqli_real_escape_string($con, $_POST['salaryUnit']);
-    $location = mysqli_real_escape_string($con, $_POST['location']);
-    $date = mysqli_real_escape_string($con, $_POST['date']);
-    $duration = mysqli_real_escape_string($con, $_POST['duration']);
-    $jobType = mysqli_real_escape_string($con, $_POST['jobType']);
-    $industry = mysqli_real_escape_string($con, $_POST['industry']);
-    $experienceLevel = mysqli_real_escape_string($con, $_POST['experienceLevel']);
-    $remoteOption = mysqli_real_escape_string($con, $_POST['remoteOption']);
-    $skills = mysqli_real_escape_string($con, $_POST['skills']);
-    $applicationDeadline = mysqli_real_escape_string($con, $_POST['applicationDeadline']);
-    
-    // Check if required fields are not empty
-    if(!empty($jobTitle) && !empty($jobDescription) && !empty($salary) && !empty($location) && !empty($date)) {
-        // Create SQL query
-        $query = "INSERT INTO jobs (
-            Employer_ID, Company, Title, Description, JobRequirements, 
-            Salary, SalaryUnit, Location, WorkDate, Duration, JobType, 
-            Industry, ExperienceLevel, RemoteOption, Skills, ApplicationDeadline
-        ) VALUES (
-            '$employerId', '$companyName', '$jobTitle', '$jobDescription', '$jobRequirements',
-            '$salary', '$salaryUnit', '$location', '$date', '$duration', '$jobType',
-            '$industry', '$experienceLevel', '$remoteOption', '$skills', 
-            " . ($applicationDeadline ? "'$applicationDeadline'" : "NULL") . "
-        )";
+// Check if employer is logged in
+if (!isset($_SESSION['employer_id'])) {
+    http_response_code(401);
+    echo json_encode(["error" => "Unauthorized"]);
+    exit;
+}
 
-        if(mysqli_query($con, $query)) {
-            $_SESSION['success_message'] = "Job posted successfully!";
-            header("Location: employer_dashboard.php");
-            die;
-        } else {
-            $error_message = "Error posting job: " . mysqli_error($con);
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $title = $_POST['title'] ?? '';
+    $company = $_POST['company'] ?? '';
+    $description = $_POST['description'] ?? '';
+    $location = $_POST['location'] ?? '';
+    $workDate = $_POST['work_date'] ?? date('Y-m-d');
+    $jobRequirements = $_POST['job_requirements'] ?? '';
+    $salary = $_POST['salary'] ?? 0.00;
+    $salaryUnit = $_POST['salary_unit'] ?? 'month';
+    $duration = $_POST['duration'] ?? 1;
+    $jobType = $_POST['job_type'] ?? 'Full-Time';
+    $industry = $_POST['industry'] ?? '';
+    $experienceLevel = $_POST['experience_level'] ?? 'Entry';
+    $remoteOption = $_POST['remote_option'] ?? 'On-Site';
+    $applicationDeadline = $_POST['application_deadline'] ?? null;
+    $employmentStatus = $_POST['employment_status'] ?? 'Open';
+    $skills = $_POST['skills'] ?? '[]'; // Expecting JSON array from frontend
+
+    $employerId = $_SESSION['employer_id'];
+
+    // Store skills JSON in jobs table
+    $skillsJson = json_encode(json_decode($skills, true)); // Clean JSON
+
+    $stmt = $con->prepare("INSERT INTO jobs (
+        Title, Company, Description, Location, WorkDate, Employer_ID, 
+        JobRequirements, Salary, SalaryUnit, Duration, JobType, Industry, 
+        ExperienceLevel, RemoteOption, Skills, ApplicationDeadline, EmploymentStatus
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+    $stmt->bind_param("sssssidssisssssss",
+        $title, $company, $description, $location, $workDate, $employerId,
+        $jobRequirements, $salary, $salaryUnit, $duration, $jobType, $industry,
+        $experienceLevel, $remoteOption, $skillsJson, $applicationDeadline, $employmentStatus
+    );
+
+    if ($stmt->execute()) {
+        $jobId = $stmt->insert_id;
+
+        // Process and link skills
+        $skillsArray = json_decode($skills, true);
+        $skillList = is_array($skillsArray) ? $skillsArray : [];
+
+        foreach ($skillList as $skillName) {
+            $skillName = trim($skillName);
+            if (empty($skillName)) continue;
+
+            // Check if skill exists
+            $skillQuery = "SELECT Skill_ID FROM skills WHERE Skill_Name = ?";
+            $skillStmt = $con->prepare($skillQuery);
+            $skillStmt->bind_param("s", $skillName);
+            $skillStmt->execute();
+            $skillResult = $skillStmt->get_result();
+
+            if ($skillResult->num_rows > 0) {
+                $row = $skillResult->fetch_assoc();
+                $skillId = $row['Skill_ID'];
+            } else {
+                // Insert new skill
+                $insertSkill = "INSERT INTO skills (Skill_Name) VALUES (?)";
+                $insertStmt = $con->prepare($insertSkill);
+                $insertStmt->bind_param("s", $skillName);
+                $insertStmt->execute();
+                $skillId = $insertStmt->insert_id;
+            }
+
+            // Link skill to job
+            $linkQuery = "INSERT INTO job_skills (Job_ID, Skill_ID) VALUES (?, ?)";
+            $linkStmt = $con->prepare($linkQuery);
+            $linkStmt->bind_param("ii", $jobId, $skillId);
+            $linkStmt->execute();
         }
+
+        echo json_encode(["success" => true, "job_id" => $jobId]);
     } else {
-        $error_message = "Please fill in all required fields.";
+        http_response_code(500);
+        echo json_encode(["error" => "Failed to post job"]);
     }
+} else {
+    http_response_code(405);
+    echo json_encode(["error" => "Method Not Allowed"]);
 }
 ?>
+
 
 <!DOCTYPE html>
 <html>
@@ -64,7 +102,36 @@ if($_SERVER['REQUEST_METHOD'] == "POST") {
     <title>Post a Job</title>
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css">
+    <style>
+        label { display: block; margin-top: 10px; font-weight: bold; }
+        input, select, textarea { width: 100%; padding: 8px; margin-top: 5px; }
+        button { margin-top: 15px; padding: 10px 20px; }
+    </style>
 </head>
+<!-- Tagify JS -->
+<script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', async function () {
+    // Example predefined skills
+    const skillSuggestions = await fetch('skills_list.php').then(res => res.json());
+
+    const input = document.querySelector('#skillsInput');
+    const tagify = new Tagify(input, {
+        whitelist: skillSuggestions,
+        maxTags: 20,
+        dropdown: {
+            enabled: 0,
+            classname: "tags-look",
+            maxItems: 10,
+            position: "text",
+            closeOnSelect: false
+        }
+    });
+});
+</script>
+
 <body>
 <div class="container-xxl bg-white p-0">
     <!-- Navbar -->
@@ -108,128 +175,78 @@ if($_SERVER['REQUEST_METHOD'] == "POST") {
                 <div class="col-md-3 wow fadeInUp" data-wow-delay="0.1s"></div>
                 <div class="col-md-6">
                     <div class="wow fadeInUp" data-wow-delay="0.5s">
-                        <form method="post">
-                            <div class="row g-3">
-                                <div class="col-md-12">
-                                    <div class="form-floating">
-                                        <input type="text" name="jobTitle" class="form-control" placeholder="Job Title" required>
-                                        <label for="jobTitle">Job Title *</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-12">
-                                    <div class="form-floating">
-                                        <input type="text" name="companyName" class="form-control" placeholder="Company Name">
-                                        <label for="companyName">Company Name</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-12">
-                                    <div class="form-floating">
-                                        <textarea name="jobDescription" class="form-control" placeholder="Job Description" style="height: 150px;" required></textarea>
-                                        <label for="jobDescription">Job Description *</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-12">
-                                    <div class="form-floating">
-                                        <textarea name="jobRequirements" class="form-control" placeholder="Job Requirements" style="height: 150px;"></textarea>
-                                        <label for="jobRequirements">Job Requirements</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-8">
-                                    <div class="form-floating">
-                                        <input type="number" name="salary" class="form-control" placeholder="Salary" required min="0" step="0.01">
-                                        <label for="salary">Salary *</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-floating">
-                                        <select name="salaryUnit" class="form-select" required>
-                                            <option value="hour">Per Hour</option>
-                                            <option value="day">Per Day</option>
-                                            <option value="month" selected>Per Month</option>
-                                        </select>
-                                        <label for="salaryUnit">Salary Unit</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-12">
-                                    <div class="form-floating">
-                                        <input type="text" name="location" class="form-control" placeholder="Location" required>
-                                        <label for="location">Location *</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-floating">
-                                        <input type="date" name="date" class="form-control" placeholder="Work Date" required>
-                                        <label for="date">Work Date *</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-floating">
-                                        <input type="number" name="duration" class="form-control" placeholder="Duration (in days)" min="1" value="1" required>
-                                        <label for="duration">Duration (days) *</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-floating">
-                                        <select name="jobType" class="form-select" required>
-                                            <option value="Full-Time">Full-Time</option>
-                                            <option value="Part-Time">Part-Time</option>
-                                            <option value="Contract">Contract</option>
-                                            <option value="Internship">Internship</option>
-                                            <option value="Freelance">Freelance</option>
-                                        </select>
-                                        <label for="jobType">Job Type</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-floating">
-                                        <input type="text" name="industry" class="form-control" placeholder="Industry" required>
-                                        <label for="industry">Industry *</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-floating">
-                                        <select name="experienceLevel" class="form-select" required>
-                                            <option value="Entry">Entry Level</option>
-                                            <option value="Mid">Mid Level</option>
-                                            <option value="Senior">Senior Level</option>
-                                        </select>
-                                        <label for="experienceLevel">Experience Level</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-floating">
-                                        <select name="remoteOption" class="form-select" required>
-                                            <option value="On-Site">On-Site</option>
-                                            <option value="Remote">Remote</option>
-                                            <option value="Hybrid">Hybrid</option>
-                                        </select>
-                                        <label for="remoteOption">Work Location</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-12">
-                                    <div class="form-floating">
-                                        <textarea name="skills" class="form-control" placeholder="Skills" style="height: 100px;"></textarea>
-                                        <label for="skills">Skills</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-12">
-                                    <div class="form-floating">
-                                        <input type="date" name="applicationDeadline" class="form-control" placeholder="Application Deadline">
-                                        <label for="applicationDeadline">Application Deadline</label>
-                                    </div>
-                                </div>
-                                <div class="col-12">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="termsCheck" onchange="toggleSubmitButton()">
-                                        <label class="form-check-label" for="termsCheck">
-                                            I agree to the <a href="terms_conditions.html" target="_blank" style="color: #FE7A36;">terms and conditions</a>
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-12">
-                                    <button id="postJobButton" class="btn w-100 py-3" type="submit" style="background-color: #FE7A36; color: white;" disabled>Post Job</button>
-                                </div>
-                            </div>
+                        <form id="jobForm" method="POST" action="post_jobs.php">
+                            <label for="title">Job Title</label>
+                            <input type="text" name="title" required>
+
+                            <label for="company">Company Name</label>
+                            <input type="text" name="company" required>
+
+                            <label for="description">Job Description</label>
+                            <textarea name="description" required></textarea>
+
+                            <label for="location">Location</label>
+                            <input type="text" name="location" required>
+
+                            <label for="work_date">Work Start Date</label>
+                            <input type="date" name="work_date">
+
+                            <label for="job_requirements">Job Requirements</label>
+                            <textarea name="job_requirements" required></textarea>
+
+                            <label for="salary">Salary (RM)</label>
+                            <input type="number" step="0.01" name="salary" required>
+
+                            <label for="salary_unit">Salary Unit</label>
+                            <select name="salary_unit">
+                                <option value="hour">Hour</option>
+                                <option value="day">Day</option>
+                                <option value="month" selected>Month</option>
+                            </select>
+
+                            <label for="duration">Duration (in months)</label>
+                            <input type="number" name="duration" min="1" value="1">
+
+                            <label for="job_type">Job Type</label>
+                            <select name="job_type">
+                                <option>Full-Time</option>
+                                <option>Part-Time</option>
+                                <option>Contract</option>
+                                <option>Internship</option>
+                                <option>Freelance</option>
+                            </select>
+
+                            <label for="industry">Industry</label>
+                            <input type="text" name="industry">
+
+                            <label for="experience_level">Experience Level</label>
+                            <select name="experience_level">
+                                <option>Entry</option>
+                                <option>Mid</option>
+                                <option>Senior</option>
+                            </select>
+
+                            <label for="remote_option">Remote Option</label>
+                            <select name="remote_option">
+                                <option>On-Site</option>
+                                <option>Remote</option>
+                                <option>Hybrid</option>
+                            </select>
+
+                            <label for="skills">Skills (comma-separated)</label>
+                            <input type="text" name="skills" placeholder="e.g. PHP, MySQL, Docker">
+
+                            <label for="application_deadline">Application Deadline</label>
+                            <input type="date" name="application_deadline">
+
+                            <label for="employment_status">Employment Status</label>
+                            <select name="employment_status">
+                                <option>Open</option>
+                                <option>Closed</option>
+                                <option>On-Hold</option>
+                            </select>
+
+                            <button type="submit">Post Job</button>
                         </form>
                     </div>
                 </div>
@@ -265,5 +282,12 @@ if($_SERVER['REQUEST_METHOD'] == "POST") {
         deadlineInput.min = today;
     });
 </script>
+<script>
+        document.getElementById("jobForm").addEventListener("submit", function(e) {
+            const skillInput = document.querySelector('input[name="skills"]');
+            const skills = skillInput.value.split(',').map(s => s.trim()).filter(s => s);
+            skillInput.value = JSON.stringify(skills); // Convert to JSON before submit
+        });
+    </script>
 </body>
 </html>
