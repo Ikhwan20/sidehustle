@@ -38,10 +38,25 @@ if (isset($_GET['job_id'])) {
 
             $stmt = $con->prepare($query);
             $stmt->bind_param(
-                "ssssdsisssssssssii",
-                $jobTitle, $companyName, $jobDescription, $jobRequirements, $salary, $salaryUnit, $duration,
-                $jobType, $industry, $experienceLevel, $remoteOption, $employmentStatus,
-                $applicationDeadline, $location, $date, $skills, $job_id, $_SESSION['employer_id']
+                "ssssdsssssssssssii",
+                $jobTitle,
+                $companyName,
+                $jobDescription,
+                $jobRequirements,
+                $salary,
+                $salaryUnit,
+                $duration,
+                $jobType,
+                $industry,
+                $experienceLevel,
+                $remoteOption,
+                $employmentStatus,
+                $applicationDeadline,
+                $location,
+                $date,
+                $skills,
+                $job_id,
+                $_SESSION['employer_id']
             );
 
             if ($stmt->execute()) {
@@ -88,15 +103,17 @@ if (isset($_GET['job_id'])) {
         }
     }
 
-    $query = "SELECT * FROM jobs WHERE Job_ID='$job_id' AND Employer_ID='{$_SESSION['employer_id']}' LIMIT 1";
-    $result = mysqli_query($con, $query);
-    $job = mysqli_fetch_assoc($result);
+    $query = "SELECT * FROM jobs WHERE Job_ID=? AND Employer_ID=? LIMIT 1";
+    $stmt = $con->prepare($query);
+    $stmt->bind_param("ii", $job_id, $_SESSION['employer_id']);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $job = $result->fetch_assoc();
 } else {
     header("Location: employer_dashboard.php");
     die;
 }
 ?>
-
 
 <!DOCTYPE html>
 <html>
@@ -152,7 +169,7 @@ if (isset($_GET['job_id'])) {
                                 </div>
                                 <div class="col-md-12">
                                     <div class="form-floating">
-                                        <input id="text" type="text" name="companyName" class="form-control" placeholder="Company Name" required>
+                                        <input id="text" type="text" name="companyName" class="form-control" placeholder="Company Name" value="<?php echo $job['Company']; ?>"required>
                                         <label for="companyName">Company Name</label>
                                     </div>
                                 </div>
@@ -276,7 +293,6 @@ if (isset($_GET['job_id'])) {
                                         <label for="skills">Skills (comma-separated)</label>
                                     </div>
                                 </div>
-
                                 <!-- Submit -->
                                 <div class="col-12">
                                     <button class="btn w-100 py-3" type="submit" style="background-color: #FE7A36; color: white;">Update Job</button>
