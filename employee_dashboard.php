@@ -9,7 +9,6 @@ if (!isset($_SESSION['User_ID'])) {
 $user_id = $_SESSION['User_ID'];
 
 // Fetch user information
-//$user_query = "SELECT Username, Email, Resume FROM users WHERE User_ID = ?";
 $user_query = "SELECT Username, Email, Resume, ProfilePic FROM users WHERE User_ID = ?";
 $user_stmt = $con->prepare($user_query);
 $user_stmt->bind_param("i", $user_id);
@@ -23,6 +22,24 @@ if (!$user_data) {
     die('User data not found.');
 }
 $user_stmt->close();
+
+// Fetch user skills
+$skills_query = "SELECT s.Skill_Name FROM user_skills us 
+                JOIN skills s ON us.Skill_ID = s.Skill_ID 
+                WHERE us.User_ID = ?";
+$skills_stmt = $con->prepare($skills_query);
+$skills_stmt->bind_param("i", $user_id);
+$skills_stmt->execute();
+$skills_result = $skills_stmt->get_result();
+if (!$skills_result) {
+    die('Error fetching user skills: ' . htmlspecialchars($skills_stmt->error));
+}
+
+$user_skills = [];
+while ($skill = $skills_result->fetch_assoc()) {
+    $user_skills[] = $skill['Skill_Name'];
+}
+$skills_stmt->close();
 
 // Fetch jobs applied by the user with status
 $query = "SELECT jobs.Job_ID, jobs.Title, jobs.Company, jobs.Description, jobs.Location, jobs.WorkDate, job_applications.Applied_At, job_applications.Status
@@ -90,6 +107,9 @@ $con->close();
                                 <form method="POST" action="update_resume.php" enctype="multipart/form-data">
                                     <label for="resume" class="form-label"><b>Resume:</b></label><br>
                                     <?php 
+                                    $resume_file = $user_data['Resume'] ?? '';
+                                    $resume_path = __DIR__ . '/' . $resume_file;
+                                    
                                     if (!empty($resume_file) && file_exists($resume_path)): ?>
                                         <p><a href="<?php echo $resume_file; ?>" target="_blank"><?php echo basename($resume_file); ?></a></p>
                                     <?php else: ?>
@@ -102,14 +122,26 @@ $con->close();
                             <div class="mb-3">
                                 <form method="POST" action="update_skills.php">
                                     <label for="skills" class="form-label"><b>Skills:</b></label>
-                                    <input id="skillsInput" name="skills" class="form-control" placeholder="Enter skills..." value="<?php echo htmlspecialchars($user_data['Skills'] ?? ''); ?>" />
+                                    <div class="mb-2">
+                                        <p><strong>Current Skills:</strong></p>
+                                        <?php if (!empty($user_skills)): ?>
+                                            <div class="d-flex flex-wrap">
+                                                <?php foreach ($user_skills as $skill): ?>
+                                                    <span class="badge bg-primary me-2 mb-2"><?php echo htmlspecialchars($skill); ?></span>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        <?php else: ?>
+                                            <p>No skills added yet.</p>
+                                        <?php endif; ?>
+                                    </div>
+                                    <input id="skillsInput" name="skills" class="form-control" placeholder="Enter skills..." />
                                     <button type="submit" class="btn btn-success mt-2">Update Skills</button>
                                 </form>
                             </div>
                             <div class="mb-3">
                                 <label for="profilePic" class="form-label"><b>Profile Picture:</b></label><br>
                                 <?php 
-                                $profile_pic_file = htmlspecialchars($user_data['ProfilePic']);
+                                $profile_pic_file = $user_data['ProfilePic'] ?? '';
                                 $profile_pic_path = __DIR__ . '/' . $profile_pic_file;
                                 
                                 if (!empty($profile_pic_file) && file_exists($profile_pic_path)): ?>
