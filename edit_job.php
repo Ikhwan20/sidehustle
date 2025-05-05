@@ -12,37 +12,42 @@ if (isset($_GET['job_id'])) {
     $job_id = $_GET['job_id'];
 
     if ($_SERVER['REQUEST_METHOD'] == "POST") {
-        $jobTitle = $_POST['jobTitle'];
-        $companyName = $_POST['companyName'];
-        $jobDescription = $_POST['jobDescription'];
-        $jobRequirements = $_POST['jobRequirements'];
-        $salary = $_POST['salary'];
+        // Get all form fields
+        $title = $_POST['title'];
+        $company = $_POST['company'];
+        $description = $_POST['description'];
+        $location = $_POST['location'];
+        $jobRequirements = $_POST['job_requirements'];
+        $minSalary = $_POST['minSalary'] ?? 0;
+        $maxSalary = $_POST['maxSalary'] ?? 0;
+        $salary = $minSalary; // For backwards compatibility
         $salaryUnit = $_POST['salaryUnit'];
         $duration = $_POST['duration'];
         $jobType = $_POST['jobType'];
-        $industry = $_POST['industry'];
-        $experienceLevel = $_POST['experienceLevel'];
         $remoteOption = $_POST['remoteOption'];
-        $employmentStatus = $_POST['employmentStatus'];
-        $applicationDeadline = $_POST['applicationDeadline'];
-        $location = $_POST['location'];
-        $date = $_POST['date'];
         $skills = $_POST['skills'];
+        $workDate = $_POST['work_date'] ?? date('Y-m-d');
+        $industry = $_POST['industry'] ?? '';
+        $experienceLevel = $_POST['experienceLevel'] ?? 'Entry';
+        $applicationDeadline = $_POST['applicationDeadline'] ?? null;
+        $employmentStatus = $_POST['employmentStatus'] ?? 'Open';
 
-        if (!empty($jobTitle) && !empty($jobDescription) && !empty($jobRequirements)) {
+        if (!empty($title) && !empty($description) && !empty($jobRequirements)) {
             $query = "UPDATE jobs SET 
-                Title=?, Company=?, Description=?, JobRequirements=?, Salary=?, SalaryUnit=?, Duration=?, 
+                Title=?, Company=?, Description=?, JobRequirements=?, MinSalary=?, MaxSalary=?, Salary=?, SalaryUnit=?, Duration=?, 
                 JobType=?, Industry=?, ExperienceLevel=?, RemoteOption=?, EmploymentStatus=?, 
                 ApplicationDeadline=?, Location=?, WorkDate=?, Skills=? 
                 WHERE Job_ID=? AND Employer_ID=?";
 
             $stmt = $con->prepare($query);
             $stmt->bind_param(
-                "ssssdsssssssssssii",
-                $jobTitle,
-                $companyName,
-                $jobDescription,
+                "ssssdddsssssssssssi",
+                $title,
+                $company,
+                $description,
                 $jobRequirements,
+                $minSalary,
+                $maxSalary,
                 $salary,
                 $salaryUnit,
                 $duration,
@@ -53,7 +58,7 @@ if (isset($_GET['job_id'])) {
                 $employmentStatus,
                 $applicationDeadline,
                 $location,
-                $date,
+                $workDate,
                 $skills,
                 $job_id,
                 $_SESSION['employer_id']
@@ -69,6 +74,7 @@ if (isset($_GET['job_id'])) {
                     $skillName = trim($skillName);
                     if (empty($skillName)) continue;
 
+                    // Check if skill exists
                     $skillQuery = "SELECT Skill_ID FROM skills WHERE Skill_Name = ?";
                     $skillStmt = $con->prepare($skillQuery);
                     $skillStmt->bind_param("s", $skillName);
@@ -79,6 +85,7 @@ if (isset($_GET['job_id'])) {
                         $row = $skillResult->fetch_assoc();
                         $skillId = $row['Skill_ID'];
                     } else {
+                        // Insert new skill
                         $insertSkill = "INSERT INTO skills (Skill_Name) VALUES (?)";
                         $insertStmt = $con->prepare($insertSkill);
                         $insertStmt->bind_param("s", $skillName);
@@ -86,6 +93,7 @@ if (isset($_GET['job_id'])) {
                         $skillId = $insertStmt->insert_id;
                     }
 
+                    // Link skill to job
                     $linkQuery = "INSERT INTO job_skills (Job_ID, Skill_ID) VALUES (?, ?)";
                     $linkStmt = $con->prepare($linkQuery);
                     $linkStmt->bind_param("ii", $job_id, $skillId);
@@ -103,12 +111,20 @@ if (isset($_GET['job_id'])) {
         }
     }
 
+    // Fetch job data
     $query = "SELECT * FROM jobs WHERE Job_ID=? AND Employer_ID=? LIMIT 1";
     $stmt = $con->prepare($query);
     $stmt->bind_param("ii", $job_id, $_SESSION['employer_id']);
     $stmt->execute();
     $result = $stmt->get_result();
-    $job = $result->fetch_assoc();
+    
+    if ($result->num_rows > 0) {
+        $job = $result->fetch_assoc();
+    } else {
+        // Job not found or doesn't belong to this employer
+        header("Location: employer_dashboard.php");
+        die;
+    }
 } else {
     header("Location: employer_dashboard.php");
     die;
@@ -136,7 +152,7 @@ if (isset($_GET['job_id'])) {
             <div class="collapse navbar-collapse" id="navbarCollapse">
                 <ul class="navbar-nav ms-auto p-4 p-lg-0">
                     <li class="nav-item">
-                        <span class="nav-link" style="cursor: pointer; color: #FE7A36;">Welcome,  <?php echo$_SESSION['employer_username']; ?></span>
+                        <span class="nav-link" style="cursor: pointer; color: #FE7A36;">Welcome, <?php echo $_SESSION['employer_username']; ?></span>
                     </li>
                     <li class="nav-item">
                         <a href="employer_dashboard.php" class="nav-link">Home</a>
@@ -159,145 +175,81 @@ if (isset($_GET['job_id'])) {
                 <div class="col-md-3 wow fadeInUp" data-wow-delay="0.1s"></div>
                 <div class="col-md-6">
                     <div class="wow fadeInUp" data-wow-delay="0.5s">
-                        <form method="post">
-                            <div class="row g-3">
-                                <div class="col-md-12">
-                                    <div class="form-floating">
-                                        <input id="text" type="text" name="jobTitle" class="form-control" placeholder="Job Title" value="<?php echo $job['Title']; ?>" required>
-                                        <label for="jobTitle">Job Title</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-12">
-                                    <div class="form-floating">
-                                        <input id="text" type="text" name="companyName" class="form-control" placeholder="Company Name" value="<?php echo $job['Company']; ?>"required>
-                                        <label for="companyName">Company Name</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-12">
-                                    <div class="form-floating">
-                                        <textarea name="jobDescription" class="form-control" placeholder="Job Description" style="height: 150px;" required><?php echo $job['Description']; ?></textarea>
-                                        <label for="jobDescription">Job Description</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-12">
-                                    <div class="form-floating">
-                                        <textarea name="jobRequirements" class="form-control" placeholder="Job Requirements" style="height: 150px;" required><?php echo $job['JobRequirements']; ?></textarea>
-                                        <label for="jobRequirements">Job Requirements</label>
-                                    </div>
-                                </div>
-                                <!-- Salary -->
-                                <div class="col-md-6">
-                                    <div class="form-floating">
-                                        <input type="text" name="salary" class="form-control" placeholder="Salary" value="<?php echo $job['Salary']; ?>" required>
-                                        <label for="salary">Salary</label>
-                                    </div>
-                                </div>
+                        <form action="edit_job.php?job_id=<?= $job_id ?>" method="POST">
+                            <label for="title">Job Title:</label>
+                            <input type="text" name="title" value="<?= htmlspecialchars($job['Title']) ?>" required><br>
 
-                                <!-- Salary Unit -->
-                                <div class="col-md-6">
-                                    <div class="form-floating">
-                                        <select class="form-control" name="salaryUnit" required>
-                                            <option value="monthly" <?php if($job['SalaryUnit'] == 'monthly') echo 'selected'; ?>>Monthly</option>
-                                            <option value="hourly" <?php if($job['SalaryUnit'] == 'hourly') echo 'selected'; ?>>Hourly</option>
-                                        </select>
-                                        <label for="salaryUnit">Salary Unit</label>
-                                    </div>
-                                </div>
+                            <label for="company">Company Name:</label>
+                            <input type="text" name="company" value="<?= htmlspecialchars($job['Company']) ?>" required><br>
+                            
+                            <label for="location">Location:</label>
+                            <input type="text" name="location" value="<?= htmlspecialchars($job['Location']) ?>" required><br>
 
-                                <!-- Duration -->
-                                <div class="col-md-6">
-                                    <div class="form-floating">
-                                        <input type="text" name="duration" class="form-control" placeholder="Duration" value="<?php echo $job['Duration']; ?>" required>
-                                        <label for="duration">Duration</label>
-                                    </div>
-                                </div>
+                            <label for="jobType">Job Type:</label>
+                            <select name="jobType" required>
+                                <option value="Full-Time" <?= $job['JobType'] == 'Full-Time' ? 'selected' : '' ?>>Full-Time</option>
+                                <option value="Part-Time" <?= $job['JobType'] == 'Part-Time' ? 'selected' : '' ?>>Part-Time</option>
+                                <option value="Contract" <?= $job['JobType'] == 'Contract' ? 'selected' : '' ?>>Contract</option>
+                                <option value="Internship" <?= $job['JobType'] == 'Internship' ? 'selected' : '' ?>>Internship</option>
+                                <option value="Freelance" <?= $job['JobType'] == 'Freelance' ? 'selected' : '' ?>>Freelance</option>
+                            </select><br>
 
-                                <!-- Job Type -->
-                                <div class="col-md-6">
-                                    <div class="form-floating">
-                                        <select class="form-control" name="jobType" required>
-                                            <option value="part-time" <?php if($job['JobType'] == 'part-time') echo 'selected'; ?>>Part-time</option>
-                                            <option value="full-time" <?php if($job['JobType'] == 'full-time') echo 'selected'; ?>>Full-time</option>
-                                        </select>
-                                        <label for="jobType">Job Type</label>
-                                    </div>
-                                </div>
+                            <label for="duration">Duration (in months):</label>
+                            <input type="text" name="duration" value="<?= htmlspecialchars($job['Duration']) ?>"><br>
 
-                                <!-- Industry -->
-                                <div class="col-md-6">
-                                    <div class="form-floating">
-                                        <input type="text" name="industry" class="form-control" placeholder="Industry" value="<?php echo $job['Industry']; ?>" required>
-                                        <label for="industry">Industry</label>
-                                    </div>
-                                </div>
+                            <label for="remoteOption">Remote Option:</label>
+                            <select name="remoteOption" required>
+                                <option value="On-Site" <?= $job['RemoteOption'] == 'On-Site' ? 'selected' : '' ?>>On-Site</option>
+                                <option value="Remote" <?= $job['RemoteOption'] == 'Remote' ? 'selected' : '' ?>>Remote</option>
+                                <option value="Hybrid" <?= $job['RemoteOption'] == 'Hybrid' ? 'selected' : '' ?>>Hybrid</option>
+                            </select><br>
 
-                                <!-- Experience Level -->
-                                <div class="col-md-6">
-                                    <div class="form-floating">
-                                        <select class="form-control" name="experienceLevel" required>
-                                            <option value="entry" <?php if($job['ExperienceLevel'] == 'entry') echo 'selected'; ?>>Entry</option>
-                                            <option value="intermediate" <?php if($job['ExperienceLevel'] == 'intermediate') echo 'selected'; ?>>Intermediate</option>
-                                            <option value="senior" <?php if($job['ExperienceLevel'] == 'senior') echo 'selected'; ?>>Senior</option>
-                                        </select>
-                                        <label for="experienceLevel">Experience Level</label>
-                                    </div>
-                                </div>
+                            <label for="minSalary">Minimum Salary:</label>
+                            <input type="number" name="minSalary" value="<?= htmlspecialchars($job['MinSalary'] ?? $job['Salary']) ?>"><br>
 
-                                <!-- Remote Option -->
-                                <div class="col-md-6">
-                                    <div class="form-floating">
-                                        <select class="form-control" name="remoteOption" required>
-                                            <option value="yes" <?php if($job['RemoteOption'] == 'yes') echo 'selected'; ?>>Yes</option>
-                                            <option value="no" <?php if($job['RemoteOption'] == 'no') echo 'selected'; ?>>No</option>
-                                        </select>
-                                        <label for="remoteOption">Remote Option</label>
-                                    </div>
-                                </div>
+                            <label for="maxSalary">Maximum Salary:</label>
+                            <input type="number" name="maxSalary" value="<?= htmlspecialchars($job['MaxSalary'] ?? $job['Salary']) ?>"><br>
 
-                                <!-- Employment Status -->
-                                <div class="col-md-6">
-                                    <div class="form-floating">
-                                        <input type="text" name="employmentStatus" class="form-control" placeholder="Employment Status" value="<?php echo $job['EmploymentStatus']; ?>" required>
-                                        <label for="employmentStatus">Employment Status</label>
-                                    </div>
-                                </div>
+                            <label for="salaryUnit">Salary Unit:</label>
+                            <select name="salaryUnit" required>
+                                <option value="hour" <?= $job['SalaryUnit'] == 'hour' ? 'selected' : '' ?>>Hourly</option>
+                                <option value="day" <?= $job['SalaryUnit'] == 'day' ? 'selected' : '' ?>>Daily</option>
+                                <option value="month" <?= $job['SalaryUnit'] == 'month' ? 'selected' : '' ?>>Monthly</option>
+                            </select><br>
+                            
+                            <label for="industry">Industry:</label>
+                            <input type="text" name="industry" value="<?= htmlspecialchars($job['Industry']) ?>"><br>
+                            
+                            <label for="experienceLevel">Experience Level:</label>
+                            <select name="experienceLevel">
+                                <option value="Entry" <?= $job['ExperienceLevel'] == 'Entry' ? 'selected' : '' ?>>Entry</option>
+                                <option value="Mid" <?= $job['ExperienceLevel'] == 'Mid' ? 'selected' : '' ?>>Mid</option>
+                                <option value="Senior" <?= $job['ExperienceLevel'] == 'Senior' ? 'selected' : '' ?>>Senior</option>
+                            </select><br>
+                            
+                            <label for="employmentStatus">Employment Status:</label>
+                            <select name="employmentStatus">
+                                <option value="Open" <?= $job['EmploymentStatus'] == 'Open' ? 'selected' : '' ?>>Open</option>
+                                <option value="Closed" <?= $job['EmploymentStatus'] == 'Closed' ? 'selected' : '' ?>>Closed</option>
+                                <option value="On-Hold" <?= $job['EmploymentStatus'] == 'On-Hold' ? 'selected' : '' ?>>On-Hold</option>
+                            </select><br>
+                            
+                            <label for="work_date">Work Start Date:</label>
+                            <input type="date" name="work_date" value="<?= htmlspecialchars($job['WorkDate']) ?>"><br>
+                            
+                            <label for="applicationDeadline">Application Deadline:</label>
+                            <input type="date" name="applicationDeadline" value="<?= htmlspecialchars($job['ApplicationDeadline']) ?>"><br>
 
-                                <!-- Application Deadline -->
-                                <div class="col-md-6">
-                                    <div class="form-floating">
-                                        <input type="date" name="applicationDeadline" class="form-control" value="<?php echo $job['ApplicationDeadline']; ?>" required>
-                                        <label for="applicationDeadline">Application Deadline</label>
-                                    </div>
-                                </div>
+                            <label for="description">Job Description:</label><br>
+                            <textarea name="description" rows="6" cols="50" required><?= htmlspecialchars($job['Description']) ?></textarea><br>
+                            
+                            <label for="job_requirements">Job Requirements:</label><br>
+                            <textarea name="job_requirements" rows="6" cols="50" required><?= htmlspecialchars($job['JobRequirements']) ?></textarea><br>
 
-                                <!-- Work Date -->
-                                <div class="col-md-6">
-                                    <div class="form-floating">
-                                        <input type="date" name="date" class="form-control" value="<?php echo $job['WorkDate']; ?>" required>
-                                        <label for="date">Work Start Date</label>
-                                    </div>
-                                </div>
+                            <label for="skills">Skills (comma-separated):</label>
+                            <input type="text" name="skills" value="<?= htmlspecialchars($job['Skills']) ?>"><br>
 
-                                <!-- Location -->
-                                <div class="col-md-12">
-                                    <div class="form-floating">
-                                        <input type="text" name="location" class="form-control" placeholder="Location" value="<?php echo $job['Location']; ?>" required>
-                                        <label for="location">Location</label>
-                                    </div>
-                                </div>
-
-                                <!-- Skills -->
-                                <div class="col-md-12">
-                                    <div class="form-floating">
-                                        <input type="text" name="skills" class="form-control" placeholder="Skills" value="<?php echo $job['Skills']; ?>" required>
-                                        <label for="skills">Skills (comma-separated)</label>
-                                    </div>
-                                </div>
-                                <!-- Submit -->
-                                <div class="col-12">
-                                    <button class="btn w-100 py-3" type="submit" style="background-color: #FE7A36; color: white;">Update Job</button>
-                                </div>
-                            </div>
+                            <input type="submit" value="Update Job" class="btn btn-primary mt-3">
                         </form>
                     </div>
                 </div>
@@ -309,7 +261,24 @@ if (isset($_GET['job_id'])) {
 
 <script src="js/bootstrap.bundle.min.js"></script>
 <script src="js/main.js"></script>
-<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+<script>
+function confirmLogout() {
+    if (confirm("Are you sure you want to logout?")) {
+        window.location.href = "logout.php";
+    }
+}
+
+// Optional: Set min date for application deadline to today
+document.addEventListener('DOMContentLoaded', function() {
+    const deadlineInput = document.querySelector('input[name="applicationDeadline"]');
+    const workDateInput = document.querySelector('input[name="work_date"]');
+    
+    if (deadlineInput && workDateInput) {
+        const today = new Date().toISOString().split('T')[0];
+        if (!workDateInput.value) workDateInput.min = today;
+        if (!deadlineInput.value) deadlineInput.min = today;
+    }
+});
+</script>
 </body>
 </html>

@@ -78,6 +78,6 @@ if (isset($_POST['skills']) && !empty($_POST['skills'])) {
 $con->close();
 
 // Redirect back to the dashboard
-header("Location: dashboard.php");
+header("Location: employee_dashboard.php");
 exit;
 ?>
