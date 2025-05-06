@@ -112,6 +112,7 @@ $con->close();
                                     
                                     if (!empty($resume_file) && file_exists($resume_path)): ?>
                                         <p><a href="<?php echo $resume_file; ?>" target="_blank"><?php echo basename($resume_file); ?></a></p>
+                                        <a href="view_resume.php?file=<?php echo urlencode($user['Resume']); ?>" target="_blank" class="btn btn-sm btn-info">View Resume</a>
                                     <?php else: ?>
                                         <p>No resume uploaded or file not found</p>
                                     <?php endif; ?>
