@@ -6,11 +6,13 @@ include("functions.php");
 
 // Check if employer is logged in
 if (!isset($_SESSION['employer_id'])) {
-    http_response_code(401);
-    echo json_encode(["error" => "Unauthorized"]);
+    header("Location: employer_login.php");
     exit;
 }
 
+$error_message = '';
+
+// Only process the form if it's a POST request
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $title = $_POST['title'] ?? '';
     $company = $_POST['company'] ?? '';
@@ -83,19 +85,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $linkStmt->execute();
         }
 
-        echo json_encode(["success" => true, "job_id" => $jobId]);
+        // Only redirect after successful form submission
+        $_SESSION['success_message'] = "Job posted successfully!";
+        header("Location: employer_dashboard.php");
+        exit;
     } else {
-        http_response_code(500);
-        echo json_encode(["error" => "Failed to post job"]);
+        $error_message = "Failed to post job. Please try again.";
     }
-} else {
-    http_response_code(405);
-    echo json_encode(["error" => "Method Not Allowed"]);
 }
-header("Location: employer_dashboard.php");
-die;
 ?>
-
 
 <!DOCTYPE html>
 <html>
@@ -111,29 +109,6 @@ die;
         button { margin-top: 15px; padding: 10px 20px; }
     </style>
 </head>
-<!-- Tagify JS -->
-<script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
-
-<script>
-document.addEventListener('DOMContentLoaded', async function () {
-    // Example predefined skills
-    const skillSuggestions = await fetch('skills_list.php').then(res => res.json());
-
-    const input = document.querySelector('#skillsInput');
-    const tagify = new Tagify(input, {
-        whitelist: skillSuggestions,
-        maxTags: 20,
-        dropdown: {
-            enabled: 0,
-            classname: "tags-look",
-            maxItems: 10,
-            position: "text",
-            closeOnSelect: false
-        }
-    });
-});
-</script>
-
 <body>
 <div class="container-xxl bg-white p-0">
     <!-- Navbar -->
@@ -169,7 +144,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         <div class="container">
             <h1 class="text-center mb-5 wow fadeInUp" data-wow-delay="0.1s">Post a Job</h1>
             
-            <?php if(isset($error_message)): ?>
+            <?php if(!empty($error_message)): ?>
                 <div class="alert alert-danger"><?php echo $error_message; ?></div>
             <?php endif; ?>
             
@@ -185,7 +160,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                             <input type="text" name="company" required>
 
                             <label for="description">Job Description</label>
-                            <textarea name="description" required></textarea>
+                            <textarea name="description" rows="4" required></textarea>
 
                             <label for="location">Location</label>
                             <input type="text" name="location" required>
@@ -194,7 +169,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                             <input type="date" name="work_date">
 
                             <label for="job_requirements">Job Requirements</label>
-                            <textarea name="job_requirements" required></textarea>
+                            <textarea name="job_requirements" rows="4" required></textarea>
 
                             <label for="salary">Salary (RM)</label>
                             <input type="number" step="0.01" name="salary" required>
@@ -236,7 +211,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                             </select>
 
                             <label for="skills">Skills (comma-separated)</label>
-                            <input type="text" name="skills" placeholder="e.g. PHP, MySQL, Docker">
+                            <input type="text" id="skillsInput" name="skills" placeholder="e.g. PHP, MySQL, Docker">
 
                             <label for="application_deadline">Application Deadline</label>
                             <input type="date" name="application_deadline">
@@ -248,7 +223,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                                 <option>On-Hold</option>
                             </select>
 
-                            <button type="submit">Post Job</button>
+                            <button type="submit" class="btn btn-primary">Post Job</button>
                         </form>
                     </div>
                 </div>
@@ -261,35 +236,64 @@ document.addEventListener('DOMContentLoaded', async function () {
 <!-- Include necessary JS files -->
 <script src="js/bootstrap.bundle.min.js"></script>
 <script src="js/main.js"></script>
+<!-- Tagify JS -->
+<script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
 <script>
     function confirmLogout() {
         if (confirm("Are you sure you want to logout?")) {
-            window.location.href = "logout.php";
+            window.location.href = "employer_logout.php";
         }
     }
     
-    function toggleSubmitButton() {
-        const termsCheck = document.getElementById('termsCheck');
-        const postJobButton = document.getElementById('postJobButton');
-        postJobButton.disabled = !termsCheck.checked;
-    }
-    
-    // Optional: Set min date for application deadline to today
+    // Set min date for application deadline to today
     document.addEventListener('DOMContentLoaded', function() {
-        const deadlineInput = document.querySelector('input[name="applicationDeadline"]');
-        const workDateInput = document.querySelector('input[name="date"]');
+        const deadlineInput = document.querySelector('input[name="application_deadline"]');
+        const workDateInput = document.querySelector('input[name="work_date"]');
         
         const today = new Date().toISOString().split('T')[0];
-        workDateInput.min = today;
-        deadlineInput.min = today;
+        if(workDateInput) workDateInput.min = today;
+        if(deadlineInput) deadlineInput.min = today;
+        
+        // Initialize Tagify for skills input
+        try {
+            const input = document.getElementById('skillsInput');
+            if(input) {
+                const tagify = new Tagify(input, {
+                    maxTags: 20,
+                    dropdown: {
+                        enabled: 0,
+                        classname: "tags-look",
+                        maxItems: 10,
+                        position: "text",
+                        closeOnSelect: false
+                    }
+                });
+                
+                // Try to fetch skill suggestions if available
+                fetch('skills_list.php')
+                    .then(res => res.json())
+                    .then(skills => {
+                        tagify.settings.whitelist = skills;
+                    })
+                    .catch(err => {
+                        console.log("Skills list not available, continuing without suggestions");
+                    });
+            }
+        } catch(e) {
+            console.log("Tagify initialization error:", e);
+        }
+    });
+    
+    document.getElementById("jobForm").addEventListener("submit", function(e) {
+        const skillInput = document.querySelector('input[name="skills"]');
+        if(skillInput && skillInput.value) {
+            // Check if it's already a JSON string
+            if(!skillInput.value.startsWith('[')) {
+                const skills = skillInput.value.split(',').map(s => s.trim()).filter(s => s);
+                skillInput.value = JSON.stringify(skills); // Convert to JSON before submit
+            }
+        }
     });
 </script>
-<script>
-        document.getElementById("jobForm").addEventListener("submit", function(e) {
-            const skillInput = document.querySelector('input[name="skills"]');
-            const skills = skillInput.value.split(',').map(s => s.trim()).filter(s => s);
-            skillInput.value = JSON.stringify(skills); // Convert to JSON before submit
-        });
-    </script>
 </body>
 </html>
