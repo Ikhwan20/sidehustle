@@ -284,7 +284,7 @@ if (isset($_SESSION['User_ID'])) {
                                         <p>We will use your existing resume: <strong><?php echo basename($current_user['Resume']); ?></strong></p>
                                         <input type="hidden" name="use_existing_resume" value="1">
                                         <input type="hidden" name="existing_resume_path" value="<?php echo htmlspecialchars($current_user['Resume']); ?>">
-                                        <a href="<?php echo htmlspecialchars($current_user['Resume']); ?>" target="_blank" class="btn btn-sm btn-info">View Resume</a>
+                                        <a href="view_resume.php?file=<?php echo urlencode($current_user['Resume']); ?>" target="_blank" class="btn btn-sm btn-info">View Resume</a>
                                     </div>
                                     <div class="mb-3">
                                         <div class="form-check">
