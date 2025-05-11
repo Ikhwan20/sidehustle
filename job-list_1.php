@@ -212,95 +212,102 @@ if (!isset($_SESSION['User_ID'])) {
                         } else {
                             echo '<p>No jobs found.</p>';
                         }
-                        mysqli_close($con);
                         ?>
+                    </div>
+                    
+                    <!-- Job Details Modal -->
+                    <div id="details-modal" class="modal fade" tabindex="-1" aria-labelledby="details-modal" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="modal-title"></h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p id="modal-description"></p>
+                                    <p id="modal-location"></p>
+                                    <p id="modal-salary"></p>
+                                    
+                                    <?php
+                                    // Fetch the current user's information to pre-fill the form
+                                    $current_user_query = "SELECT Username, Email, Resume FROM users WHERE User_ID = ?";
+                                    $current_user_stmt = $con->prepare($current_user_query);
+                                    $current_user_stmt->bind_param("i", $user_id);
+                                    $current_user_stmt->execute();
+                                    $current_user_result = $current_user_stmt->get_result();
+                                    $current_user = $current_user_result->fetch_assoc();
+                                    $current_user_stmt->close();
+                                    ?>
 
-                        
-                        <!-- Job Details Modal -->
-                        <div id="details-modal" class="modal fade" tabindex="-1" aria-labelledby="details-modal" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title" id="modal-title"></h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <p id="modal-description"></p>
-                                        <p id="modal-location"></p>
-                                        <p id="modal-salary"></p>
-                                        
-                                        <?php
-                                        // Fetch the current user's information to pre-fill the form
-                                        $current_user_query = "SELECT Username, Email, Resume FROM users WHERE User_ID = ?";
-                                        $current_user_stmt = $con->prepare($current_user_query);
-                                        $current_user_stmt->bind_param("i", $user_id);
-                                        $current_user_stmt->execute();
-                                        $current_user_result = $current_user_stmt->get_result();
-                                        $current_user = $current_user_result->fetch_assoc();
-                                        $current_user_stmt->close();
-                                        ?>
+                                    <!-- Add application form -->
+                                    <form id="application-form" action="submit_application.php" method="POST" enctype="multipart/form-data" style="display:none;">
+                                        <input type="hidden" id="job-id-input" name="job-id">
+                                        <div class="mb-3">
+                                            <label for="full-name" class="form-label">Full Name</label>
+                                            <input type="text" class="form-control" id="full-name" name="full-name" value="<?php echo htmlspecialchars($current_user['Username'] ?? ''); ?>" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="email" class="form-label">Email</label>
+                                            <input type="email" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($current_user['Email'] ?? ''); ?>" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="resume" class="form-label">Resume</label>
+                                            <?php if (!empty($current_user['Resume']) && file_exists($current_user['Resume'])): ?>
+                                                <div class="alert alert-success">
+                                                    <p>We will use your existing resume: <strong><?php echo basename($current_user['Resume']); ?></strong></p>
+                                                    <input type="hidden" name="use_existing_resume" value="1">
+                                                    <input type="hidden" name="existing_resume_path" value="<?php echo htmlspecialchars($current_user['Resume']); ?>">
+                                                    <a href="view_resume.php?file=<?php echo urlencode($current_user['Resume']); ?>" target="_blank" class="btn btn-sm btn-info">View Resume</a>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="upload-new-resume">
+                                                        <label class="form-check-label" for="upload-new-resume">
+                                                            Upload a different resume instead
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div id="new-resume-upload" style="display:none;">
+                                                    <input type="file" class="form-control" id="resume" name="resume" accept=".pdf,.doc,.docx">
+                                                </div>
+                                            <?php else: ?>
+                                                <input type="file" class="form-control" id="resume" name="resume" accept=".pdf,.doc,.docx" required>
+                                                <small class="text-muted">Please upload your resume (PDF, DOC, or DOCX)</small>
+                                            <?php endif; ?>
+                                        </div>
+                                        <button type="submit" class="btn btn-orange">Submit Application</button>
+                                    </form>
 
-                                        <!-- Add application form -->
-                                        <form id="application-form" action="submit_application.php" method="POST" enctype="multipart/form-data" style="display:none;">
-                                            <input type="hidden" id="job-id-input" name="job-id">
-                                            <div class="mb-3">
-                                                <label for="full-name" class="form-label">Full Name</label>
-                                                <input type="text" class="form-control" id="full-name" name="full-name" value="<?php echo htmlspecialchars($current_user['Username'] ?? ''); ?>" required>
-                                            </div>
-                                            <div class="mb-3">
-                                                <label for="email" class="form-label">Email</label>
-                                                <input type="email" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($current_user['Email'] ?? ''); ?>" required>
-                                            </div>
-                                            <div class="mb-3">
-                                                <label for="resume" class="form-label">Resume</label>
-                                                <?php if (!empty($current_user['Resume']) && file_exists($current_user['Resume'])): ?>
-                                                    <div class="alert alert-success">
-                                                        <p>We will use your existing resume: <strong><?php echo basename($current_user['Resume']); ?></strong></p>
-                                                        <input type="hidden" name="use_existing_resume" value="1">
-                                                        <input type="hidden" name="existing_resume_path" value="<?php echo htmlspecialchars($current_user['Resume']); ?>">
-                                                        <a href="view_resume.php?file=<?php echo urlencode($current_user['Resume']); ?>" target="_blank" class="btn btn-sm btn-info">View Resume</a>
-                                                    </div>
-                                                    <div class="mb-3">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input" type="checkbox" id="upload-new-resume">
-                                                            <label class="form-check-label" for="upload-new-resume">
-                                                                Upload a different resume instead
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                    <div id="new-resume-upload" style="display:none;">
-                                                        <input type="file" class="form-control" id="resume" name="resume" accept=".pdf,.doc,.docx">
-                                                    </div>
-                                                <?php else: ?>
-                                                    <input type="file" class="form-control" id="resume" name="resume" accept=".pdf,.doc,.docx" required>
-                                                    <small class="text-muted">Please upload your resume (PDF, DOC, or DOCX)</small>
-                                                <?php endif; ?>
-                                            </div>
-                                            <button type="submit" class="btn btn-orange">Submit Application</button>
-                                        </form>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button id="apply-now-btn" class="btn btn-orange">Apply Now</button>
-                                    </div>
+                                    <script>
+                                        // Add script to toggle the resume upload field
+                                        document.addEventListener('DOMContentLoaded', function() {
+                                            const uploadNewResumeCheckbox = document.getElementById('upload-new-resume');
+                                            if (uploadNewResumeCheckbox) {
+                                                uploadNewResumeCheckbox.addEventListener('change', function() {
+                                                    const newResumeUploadDiv = document.getElementById('new-resume-upload');
+                                                    const resumeInput = document.querySelector('#new-resume-upload #resume');
+                                                    
+                                                    if (this.checked) {
+                                                        newResumeUploadDiv.style.display = 'block';
+                                                        resumeInput.required = true;
+                                                        document.querySelector('input[name="use_existing_resume"]').value = '0';
+                                                    } else {
+                                                        newResumeUploadDiv.style.display = 'none';
+                                                        resumeInput.required = false;
+                                                        document.querySelector('input[name="use_existing_resume"]').value = '1';
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    </script>
+                                </div>
+                                <div class="modal-footer">
+                                    <button id="apply-now-btn" class="btn btn-orange">Apply Now</button>
                                 </div>
                             </div>
                         </div>
-                        <div class="modal" id="login-modal">
-                            <div class="modal-content">
-                                <span class="close" id="close-login-modal">&times;</span>
-                                <h4 class="mb-3">Log In</h4>
-                                <p>Please <a href="login.php">log in</a> to apply for this job.</p>
-                            </div>
-                        </div>
-
-                        <div class="modal" id="register-modal">
-                            <div class="modal-content">
-                                <span class="close" id="close-register-modal">&times;</span>
-                                <h4 class="mb-3">Register</h4>
-                                <p>Don't have an account? <a href="register.php">Register here</a>.</p>
-                            </div>
-                        </div>
                     </div>
+                    
                 </div>
             </div>
         </div>
@@ -339,7 +346,6 @@ if (!isset($_SESSION['User_ID'])) {
                 </div>
             </div>
         </div>
-    
 
         <a href="#" class="btn btn-lg btn-orange btn-lg-square back-to-top"><i class="bi bi-arrow-up"></i></a>
 
@@ -468,84 +474,6 @@ if (!isset($_SESSION['User_ID'])) {
                                 detailsModal.hide();
                             }
                         }
-                    });
-                });
-
-                // Add script to toggle the resume upload field
-                const uploadNewResumeCheckbox = document.getElementById('upload-new-resume');
-                if (uploadNewResumeCheckbox) {
-                    uploadNewResumeCheckbox.addEventListener('change', function() {
-                        console.log("Resume checkbox changed");
-                        const newResumeUploadDiv = document.getElementById('new-resume-upload');
-                        const resumeInput = document.querySelector('#new-resume-upload #resume');
-                        
-                        if (this.checked) {
-                            newResumeUploadDiv.style.display = 'block';
-                            resumeInput.required = true;
-                            document.querySelector('input[name="use_existing_resume"]').value = '0';
-                        } else {
-                            newResumeUploadDiv.style.display = 'none';
-                            resumeInput.required = false;
-                            document.querySelector('input[name="use_existing_resume"]').value = '1';
-                        }
-                    });
-                }
-            });
-        </script>
-        <!--
-        ADD THIS AT THE VERY BOTTOM OF YOUR PAGE, IMMEDIATELY BEFORE THE CLOSING </body> TAG
-        Make sure this is AFTER any other JavaScript includes
-        -->
-
-        <script>
-            // Test if JavaScript is working at all
-            console.log("TEST SCRIPT RUNNING");
-            alert("Test alert - JavaScript is running");
-
-            // Define the filterJobs function globally
-            function filterJobs() {
-                console.log("filterJobs called");
-                alert("Search button clicked!");
-                let searchQuery = document.getElementById("searchJobs").value.trim();
-                window.location.href = "job-list_1.php?search=" + encodeURIComponent(searchQuery);
-            }
-
-            // Test direct event binding
-            document.addEventListener("DOMContentLoaded", function() {
-                console.log("DOM fully loaded");
-                
-                // Test click on search button
-                document.querySelector(".btn-primary").addEventListener("click", function() {
-                    console.log("Search button clicked via direct binding");
-                    filterJobs();
-                });
-                
-                // Test click on details buttons
-                var detailButtons = document.querySelectorAll(".details-btn");
-                console.log("Found " + detailButtons.length + " detail buttons");
-                
-                detailButtons.forEach(function(button) {
-                    button.addEventListener("click", function() {
-                        console.log("Detail button clicked via direct binding");
-                        alert("Detail button clicked!");
-                        
-                        var jobId = this.getAttribute("data-job-id");
-                        var title = this.getAttribute("data-title");
-                        var description = this.getAttribute("data-description");
-                        var location = this.getAttribute("data-location");
-                        var salary = this.getAttribute("data-salary");
-                        
-                        console.log("Job data:", { jobId, title, description, location, salary });
-                        
-                        // Manually update modal content
-                        document.getElementById("modal-title").textContent = title;
-                        document.getElementById("modal-description").textContent = "Description: " + description;
-                        document.getElementById("modal-location").textContent = "Location: " + location;
-                        document.getElementById("modal-salary").textContent = "Salary: RM " + salary;
-                        
-                        // Show modal using vanilla JS
-                        var detailsModal = new bootstrap.Modal(document.getElementById("details-modal"));
-                        detailsModal.show();
                     });
                 });
             });
