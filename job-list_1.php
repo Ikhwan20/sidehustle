@@ -462,46 +462,6 @@ if (!isset($_SESSION['User_ID'])) {
                     }
                 });
             });
-
-            // Close button handlers - use Bootstrap modal methods
-            $('.btn-close, .close').click(function() {
-                if ($(this).closest('#details-modal').length) {
-                    detailsModal.hide();
-                } else if ($(this).closest('#login-modal').length) {
-                    loginModal.hide();
-                } else if ($(this).closest('#register-modal').length) {
-                    registerModal.hide();
-                }
-            });
-
-            $('#logout-btn').click(function() {
-                $.post('logout.php', function() {
-                    window.location.reload();
-                });
-            });
-
-            $('#particulars-form').submit(function(e) {
-                e.preventDefault();
-
-                const jobId = selectedJobId;
-                const phone = $('#phone').val();
-                const address = $('#address').val();
-
-                $.ajax({
-                    url: 'submit_application.php',
-                    type: 'POST',
-                    data: { job_id: jobId, phone: phone, address: address },
-                    dataType: 'json',
-                    success: function(response) {
-                        alert('Application submitted successfully!');
-                        // Hide the modal using Bootstrap method
-                        $('#particulars-modal').modal('hide');
-                    },
-                    error: function() {
-                        alert('Failed to submit application. Please try again.');
-                    }
-                });
-            });
             
             // Clear search input and restore job list
             $('#clearSearchBtn').click(function() {
@@ -516,40 +476,6 @@ if (!isset($_SESSION['User_ID'])) {
             window.location.href = "job-list_1.php?search=" + encodeURIComponent(searchQuery);
         }
 
-    </script>
-
-    <script>
-        // This script provides a direct fix with minimal changes to your existing code
-        $(document).ready(function() {
-            console.log("Document ready - attempting to fix modal");
-            
-            // Direct event handler for details buttons
-            $('.details-btn').on('click', function(e) {
-                e.preventDefault();
-                console.log("Details button clicked");
-                
-                // Get job details
-                const jobId = $(this).data('job-id');
-                const title = $(this).data('title');
-                const description = $(this).data('description');
-                const location = $(this).data('location');
-                const salary = $(this).data('salary');
-                
-                // Update modal content
-                $('#modal-title').text(title);
-                $('#modal-description').text('Description: ' + description);
-                $('#modal-location').text('Location: ' + location);
-                $('#modal-salary').text('Salary: RM ' + salary);
-                
-                // Store job ID
-                $('#details-modal').data('job-id', jobId);
-                $('#job-id-input').val(jobId);
-                
-                // Force show the modal using Bootstrap's method
-                var detailsModal = new bootstrap.Modal(document.getElementById('details-modal'));
-                detailsModal.show();
-            });
-        });
     </script>
 </body>
 </html>
