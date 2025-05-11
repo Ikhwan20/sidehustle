@@ -163,7 +163,7 @@ if (!isset($_SESSION['User_ID'])) {
                         <input type="text" class="form-control" id="searchJobs" placeholder="Search for jobs..." value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>">
                         <button class="btn btn-clear-search" id="clearSearchBtn">&times;</button>                        </div>
                     <div class="col-md-3">
-                        <button class="btn btn-primary w-100" onclick="filterJobs()" style="background-color: #FE7A36;">Search</button>
+                        <button class="btn btn-primary w-100" id="search-button" style="background-color: #FE7A36;">Search</button>
                     </div>
                 </div>
 
@@ -202,7 +202,7 @@ if (!isset($_SESSION['User_ID'])) {
                                 echo '</div>';
                                 echo '<div class="col-sm-12 col-md-4 d-flex flex-column align-items-start align-items-md-end justify-content-center">';
                                 echo '<div class="d-flex mb-3">';
-                                echo '<span><button class="btn btn-orange details-btn" data-job-id="' . htmlspecialchars($row['Job_ID']) . '" data-title="' . htmlspecialchars($row['Title']) . '" data-description="' . htmlspecialchars($row['Description']) . '" data-location="' . htmlspecialchars($row['Location']) . '" data-salary="' . htmlspecialchars($row['Salary']) . '">View Detail</button></span>';
+                                echo '<span><button class="btn btn-orange details-btn" data-job-id="' . htmlspecialchars($row['Job_ID']) . '" data-title="' . htmlspecialchars($row['Title']) . '" data-description="' . htmlspecialchars($row['Description']) . '" data-location="' . htmlspecialchars($row['Location']) . '" data-salary="' . htmlspecialchars($row['Salary']) . '">View Details</button></span>';
                                 echo '</div>';
                                 echo '</div>';
                                 echo '</div>';
@@ -277,29 +277,6 @@ if (!isset($_SESSION['User_ID'])) {
                                             </div>
                                             <button type="submit" class="btn btn-orange">Submit Application</button>
                                         </form>
-
-                                        <script>
-                                            // Add script to toggle the resume upload field
-                                            document.addEventListener('DOMContentLoaded', function() {
-                                                const uploadNewResumeCheckbox = document.getElementById('upload-new-resume');
-                                                if (uploadNewResumeCheckbox) {
-                                                    uploadNewResumeCheckbox.addEventListener('change', function() {
-                                                        const newResumeUploadDiv = document.getElementById('new-resume-upload');
-                                                        const resumeInput = document.querySelector('#new-resume-upload #resume');
-                                                        
-                                                        if (this.checked) {
-                                                            newResumeUploadDiv.style.display = 'block';
-                                                            resumeInput.required = true;
-                                                            document.querySelector('input[name="use_existing_resume"]').value = '0';
-                                                        } else {
-                                                            newResumeUploadDiv.style.display = 'none';
-                                                            resumeInput.required = false;
-                                                            document.querySelector('input[name="use_existing_resume"]').value = '1';
-                                                        }
-                                                    });
-                                                }
-                                            });
-                                        </script>
                                     </div>
                                     <div class="modal-footer">
                                         <button id="apply-now-btn" class="btn btn-orange">Apply Now</button>
@@ -374,26 +351,42 @@ if (!isset($_SESSION['User_ID'])) {
     <script src="js/main.js"></script>
     <script>
         // Replace the existing JavaScript section at the bottom of the file
+        function filterJobs() {
+            let searchQuery = document.getElementById("searchJobs").value.trim();
+            window.location.href = "job-list_1.php?search=" + encodeURIComponent(searchQuery);
+        }
+
+        // Document ready handler
         $(document).ready(function() {
-            const userLoggedIn = <?php echo isset($_SESSION['User_ID']) ? 'true' : 'false'; ?>;
-            const username = <?php echo isset($_SESSION['user']) ? json_encode($_SESSION['user']['username']) : 'null'; ?>;
+            console.log("Document ready function running");
+            
+            // Bind click event to search button (alternative to inline onclick)
+            $("#search-button").on("click", function() {
+                console.log("Search button clicked");
+                filterJobs();
+            });
+            
+            // Add search functionality for enter key
+            $('#searchJobs').on('keypress', function(e) {
+                if(e.which === 13) { // Enter key
+                    console.log("Enter key pressed in search");
+                    filterJobs();
+                }
+            });
 
-            if (userLoggedIn) {
-                $('#guest-nav').hide();
-                $('#user-nav').show();
-                $('#username-display').text(username);
-            } else {
-                $('#guest-nav').show();
-                $('#user-nav').hide();
-            }
-
+            // Debug output for details buttons
+            console.log("Details buttons found: " + $('.details-btn').length);
+            
             // Job details modal handlers - Using event delegation for dynamically created elements
             $(document).on('click', '.details-btn', function() {
+                console.log("Details button clicked");
                 var jobId = $(this).data('job-id');
                 var title = $(this).data('title');
                 var description = $(this).data('description');
                 var location = $(this).data('location');
                 var salary = $(this).data('salary');
+
+                console.log("Job data:", { jobId, title, description, location, salary });
 
                 // Store job ID in the hidden input
                 $('#job-id-input').val(jobId);
@@ -409,7 +402,18 @@ if (!isset($_SESSION['User_ID'])) {
                 detailsModal.show();
             });
 
+            // Clear search input and restore job list
+            $('#clearSearchBtn').click(function() {
+                console.log("Clear search button clicked");
+                $('#searchJobs').val(''); // Clear the search input
+                filterJobs(); // Call filterJobs to restore job list
+            });
+
+            // Apply Now button handling
             $('#apply-now-btn').click(function() {
+                console.log("Apply now button clicked");
+                const userLoggedIn = <?php echo isset($_SESSION['User_ID']) ? 'true' : 'false'; ?>;
+                
                 if (userLoggedIn) {
                     // Show application form
                     $('#application-form').show();
@@ -427,6 +431,7 @@ if (!isset($_SESSION['User_ID'])) {
             // Add form submission handler
             $('#application-form').on('submit', function(e) {
                 e.preventDefault();
+                console.log("Form submitted");
                 
                 var formData = new FormData(this);
                 
@@ -438,6 +443,7 @@ if (!isset($_SESSION['User_ID'])) {
                     contentType: false,
                     dataType: 'json',
                     success: function(result) {
+                        console.log("AJAX success:", result);
                         if(result.status === 'success') {
                             alert(result.message);
                             // Close modal using Bootstrap's method
@@ -463,32 +469,12 @@ if (!isset($_SESSION['User_ID'])) {
                     }
                 });
             });
-            
-            // Clear search input and restore job list
-            $('#clearSearchBtn').click(function() {
-                $('#searchJobs').val(''); // Clear the search input
-                filterJobs(); // Call filterJobs to restore job list
-            });
 
-            // Add search functionality for enter key
-            $('#searchJobs').on('keypress', function(e) {
-                if(e.which === 13) { // Enter key
-                    filterJobs();
-                }
-            });
-        });
-
-        // To find jobs - Make this a global function since it's called from button onclick
-        function filterJobs() {
-            let searchQuery = document.getElementById("searchJobs").value.trim();
-            window.location.href = "job-list_1.php?search=" + encodeURIComponent(searchQuery);
-        }
-
-        // Add script to toggle the resume upload field
-        document.addEventListener('DOMContentLoaded', function() {
+            // Add script to toggle the resume upload field
             const uploadNewResumeCheckbox = document.getElementById('upload-new-resume');
             if (uploadNewResumeCheckbox) {
                 uploadNewResumeCheckbox.addEventListener('change', function() {
+                    console.log("Resume checkbox changed");
                     const newResumeUploadDiv = document.getElementById('new-resume-upload');
                     const resumeInput = document.querySelector('#new-resume-upload #resume');
                     
