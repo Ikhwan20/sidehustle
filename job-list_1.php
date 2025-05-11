@@ -363,74 +363,38 @@ if (!isset($_SESSION['User_ID'])) {
                 window.location.href = "job-list_1.php?search=" + encodeURIComponent(searchQuery);
             }
 
-            // Document ready handler
             $(document).ready(function() {
-                console.log("Document ready function running");
-                
-                // Bind click event to search button (alternative to inline onclick)
-                $("#search-button").on("click", function() {
-                    console.log("Search button clicked");
-                    filterJobs();
-                });
-                
-                // Add search functionality for enter key
-                $('#searchJobs').on('keypress', function(e) {
-                    if(e.which === 13) { // Enter key
-                        console.log("Enter key pressed in search");
-                        filterJobs();
-                    }
-                });
-
-                // Debug output for details buttons
-                console.log("Details buttons found: " + $('.details-btn').length);
-                
-                // Job details modal handlers - Using event delegation for dynamically created elements
-                $(document).on('click', '.details-btn', function() {
-                    console.log("Details button clicked");
+                $('.details-btn').click(function() {
                     var jobId = $(this).data('job-id');
                     var title = $(this).data('title');
                     var description = $(this).data('description');
                     var location = $(this).data('location');
                     var salary = $(this).data('salary');
 
-                    console.log("Job data:", { jobId, title, description, location, salary });
+                    // Store job ID in the modal
+                    $('#details-modal').data('job-id', jobId);
 
-                    // Store job ID in the hidden input
-                    $('#job-id-input').val(jobId);
-                    
-                    // Update modal content
                     $('#modal-title').text(title);
                     $('#modal-description').text('Description: ' + description);
                     $('#modal-location').text('Location: ' + location);
                     $('#modal-salary').text('Salary: RM ' + salary);
-                    
-                    // Show the modal using Bootstrap's modal method
-                    var detailsModal = new bootstrap.Modal(document.getElementById('details-modal'));
-                    detailsModal.show();
+
+                    $('#details-modal').modal('show');
                 });
 
-                // Clear search input and restore job list
-                $('#clearSearchBtn').click(function() {
-                    console.log("Clear search button clicked");
-                    $('#searchJobs').val(''); // Clear the search input
-                    filterJobs(); // Call filterJobs to restore job list
-                });
-
-                // Apply Now button handling
                 $('#apply-now-btn').click(function() {
-                    console.log("Apply now button clicked");
                     const userLoggedIn = <?php echo isset($_SESSION['User_ID']) ? 'true' : 'false'; ?>;
                     
                     if (userLoggedIn) {
                         // Show application form
                         $('#application-form').show();
                         $(this).hide();
+                        
+                        // Set the job ID in the hidden field
+                        var jobId = $('#details-modal').data('job-id');
+                        $('#job-id-input').val(jobId);
                     } else {
-                        // Close details modal first
-                        var detailsModal = bootstrap.Modal.getInstance(document.getElementById('details-modal'));
-                        if (detailsModal) {
-                            detailsModal.hide();
-                        }
+                        $('#details-modal').modal('hide');
                         window.location.href = 'login.php';
                     }
                 });
@@ -438,7 +402,6 @@ if (!isset($_SESSION['User_ID'])) {
                 // Add form submission handler
                 $('#application-form').on('submit', function(e) {
                     e.preventDefault();
-                    console.log("Form submitted");
                     
                     var formData = new FormData(this);
                     
@@ -450,14 +413,10 @@ if (!isset($_SESSION['User_ID'])) {
                         contentType: false,
                         dataType: 'json',
                         success: function(result) {
-                            console.log("AJAX success:", result);
                             if(result.status === 'success') {
                                 alert(result.message);
-                                // Close modal using Bootstrap's method
-                                var detailsModal = bootstrap.Modal.getInstance(document.getElementById('details-modal'));
-                                if (detailsModal) {
-                                    detailsModal.hide();
-                                }
+                                // Use Bootstrap's modal hide method instead of fadeOut
+                                $('#details-modal').modal('hide');
                             } else {
                                 alert(result.message);
                             }
@@ -468,11 +427,8 @@ if (!isset($_SESSION['User_ID'])) {
                             console.log("Response text:", xhr.responseText);
                             
                             alert('Your application has been submitted, but there was an issue with the confirmation.');
-                            // Close modal using Bootstrap's method
-                            var detailsModal = bootstrap.Modal.getInstance(document.getElementById('details-modal'));
-                            if (detailsModal) {
-                                detailsModal.hide();
-                            }
+                            // Also use modal('hide') here
+                            $('#details-modal').modal('hide');
                         }
                     });
                 });
@@ -481,3 +437,6 @@ if (!isset($_SESSION['User_ID'])) {
     </div>
 </body>
 </html>
+<?php
+mysqli_close($con);
+?>
