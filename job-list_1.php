@@ -497,57 +497,57 @@ if (!isset($_SESSION['User_ID'])) {
     -->
 
     <script>
-    // Test if JavaScript is working at all
-    console.log("TEST SCRIPT RUNNING");
-    alert("Test alert - JavaScript is running");
+        // Test if JavaScript is working at all
+        console.log("TEST SCRIPT RUNNING");
+        alert("Test alert - JavaScript is running");
 
-    // Define the filterJobs function globally
-    function filterJobs() {
-        console.log("filterJobs called");
-        alert("Search button clicked!");
-        let searchQuery = document.getElementById("searchJobs").value.trim();
-        window.location.href = "job-list_1.php?search=" + encodeURIComponent(searchQuery);
-    }
+        // Define the filterJobs function globally
+        function filterJobs() {
+            console.log("filterJobs called");
+            alert("Search button clicked!");
+            let searchQuery = document.getElementById("searchJobs").value.trim();
+            window.location.href = "job-list_1.php?search=" + encodeURIComponent(searchQuery);
+        }
 
-    // Test direct event binding
-    document.addEventListener("DOMContentLoaded", function() {
-        console.log("DOM fully loaded");
-        
-        // Test click on search button
-        document.querySelector(".btn-primary").addEventListener("click", function() {
-            console.log("Search button clicked via direct binding");
-            filterJobs();
-        });
-        
-        // Test click on details buttons
-        var detailButtons = document.querySelectorAll(".details-btn");
-        console.log("Found " + detailButtons.length + " detail buttons");
-        
-        detailButtons.forEach(function(button) {
-            button.addEventListener("click", function() {
-                console.log("Detail button clicked via direct binding");
-                alert("Detail button clicked!");
-                
-                var jobId = this.getAttribute("data-job-id");
-                var title = this.getAttribute("data-title");
-                var description = this.getAttribute("data-description");
-                var location = this.getAttribute("data-location");
-                var salary = this.getAttribute("data-salary");
-                
-                console.log("Job data:", { jobId, title, description, location, salary });
-                
-                // Manually update modal content
-                document.getElementById("modal-title").textContent = title;
-                document.getElementById("modal-description").textContent = "Description: " + description;
-                document.getElementById("modal-location").textContent = "Location: " + location;
-                document.getElementById("modal-salary").textContent = "Salary: RM " + salary;
-                
-                // Show modal using vanilla JS
-                var detailsModal = new bootstrap.Modal(document.getElementById("details-modal"));
-                detailsModal.show();
+        // Test direct event binding
+        document.addEventListener("DOMContentLoaded", function() {
+            console.log("DOM fully loaded");
+            
+            // Test click on search button
+            document.querySelector(".btn-primary").addEventListener("click", function() {
+                console.log("Search button clicked via direct binding");
+                filterJobs();
+            });
+            
+            // Test click on details buttons
+            var detailButtons = document.querySelectorAll(".details-btn");
+            console.log("Found " + detailButtons.length + " detail buttons");
+            
+            detailButtons.forEach(function(button) {
+                button.addEventListener("click", function() {
+                    console.log("Detail button clicked via direct binding");
+                    alert("Detail button clicked!");
+                    
+                    var jobId = this.getAttribute("data-job-id");
+                    var title = this.getAttribute("data-title");
+                    var description = this.getAttribute("data-description");
+                    var location = this.getAttribute("data-location");
+                    var salary = this.getAttribute("data-salary");
+                    
+                    console.log("Job data:", { jobId, title, description, location, salary });
+                    
+                    // Manually update modal content
+                    document.getElementById("modal-title").textContent = title;
+                    document.getElementById("modal-description").textContent = "Description: " + description;
+                    document.getElementById("modal-location").textContent = "Location: " + location;
+                    document.getElementById("modal-salary").textContent = "Salary: RM " + salary;
+                    
+                    // Show modal using vanilla JS
+                    var detailsModal = new bootstrap.Modal(document.getElementById("details-modal"));
+                    detailsModal.show();
+                });
             });
         });
-    });
-</script>
+    </script>
 </body>
 </html>
