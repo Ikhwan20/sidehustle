@@ -214,6 +214,8 @@ if (!isset($_SESSION['User_ID'])) {
                         mysqli_close($con);
                         ?>
 
+                        
+                        <!-- Job Details Modal -->
                         <div id="details-modal" class="modal fade" tabindex="-1" aria-labelledby="details-modal" aria-hidden="true">
                             <div class="modal-dialog modal-dialog-centered">
                                 <div class="modal-content">
@@ -393,26 +395,22 @@ if (!isset($_SESSION['User_ID'])) {
             const registerModal = new bootstrap.Modal(document.getElementById('register-modal'));
 
             $('.details-btn').click(function() {
-                const title = $(this).data('title');
-                const company = $(this).data('company');
-                const description = $(this).data('description');
-                const location = $(this).data('location');
-                const salary = $(this).data('salary');
-                
-                // Store job ID in a data attribute
-                $('#details-modal').data('job-id', $(this).data('job-id'));
+                    var jobId = $(this).data('job-id');
+                    var title = $(this).data('title');
+                    var description = $(this).data('description');
+                    var location = $(this).data('location');
+                    var salary = $(this).data('salary');
 
-                $('#modal-title').text(title);
-                if (company) {
-                    $('#modal-company').text(company);
-                }
-                $('#modal-description').text('Description: ' + description);
-                $('#modal-location').text('Location: ' + location);
-                $('#modal-salary').text('Salary: RM ' + salary);
+                    // Store job ID in the modal
+                    $('#details-modal').data('job-id', jobId);
 
-                // Show the modal using Bootstrap's modal method
-                detailsModal.show();
-            });
+                    $('#modal-title').text(title);
+                    $('#modal-description').text('Description: ' + description);
+                    $('#modal-location').text('Location: ' + location);
+                    $('#modal-salary').text('Salary: RM ' + salary);
+
+                    $('#details-modal').modal('show');
+                });
 
             $('#apply-now-btn').click(function() {
                 const userLoggedIn = <?php echo isset($_SESSION['User_ID']) ? 'true' : 'false'; ?>;
@@ -426,8 +424,8 @@ if (!isset($_SESSION['User_ID'])) {
                     var jobId = $('#details-modal').data('job-id');
                     $('#job-id-input').val(jobId);
                 } else {
-                    detailsModal.hide();
-                    loginModal.show();
+                    $('#details-modal').modal('hide');
+                    window.location.href = 'login.php';
                 }
             });
 
@@ -443,12 +441,12 @@ if (!isset($_SESSION['User_ID'])) {
                     data: formData,
                     processData: false,
                     contentType: false,
-                    dataType: 'json', // Explicitly expect JSON response
+                    dataType: 'json',
                     success: function(result) {
-                        // Since we're using dataType:'json', jQuery will parse the JSON for us
                         if(result.status === 'success') {
                             alert(result.message);
-                            detailsModal.hide();
+                            // Use Bootstrap's modal hide method instead of fadeOut
+                            $('#details-modal').modal('hide');
                         } else {
                             alert(result.message);
                         }
@@ -458,8 +456,9 @@ if (!isset($_SESSION['User_ID'])) {
                         console.error("Error:", error);
                         console.log("Response text:", xhr.responseText);
                         
-                        // If we still have application in DB, show success message
                         alert('Your application has been submitted, but there was an issue with the confirmation.');
+                        // Also use modal('hide') here
+                        $('#details-modal').modal('hide');
                     }
                 });
             });
