@@ -373,7 +373,7 @@ if (!isset($_SESSION['User_ID'])) {
     <script src="lib/owlcarousel/owl.carousel.min.js"></script>
     <script src="js/main.js"></script>
     <script>
-        // Check if user logged in
+        // Replace the existing JavaScript section at the bottom of the file
         $(document).ready(function() {
             const userLoggedIn = <?php echo isset($_SESSION['User_ID']) ? 'true' : 'false'; ?>;
             const username = <?php echo isset($_SESSION['user']) ? json_encode($_SESSION['user']['username']) : 'null'; ?>;
@@ -387,8 +387,8 @@ if (!isset($_SESSION['User_ID'])) {
                 $('#user-nav').hide();
             }
 
-            // Job details modal handlers
-            $('.details-btn').click(function() {
+            // Job details modal handlers - Using event delegation for dynamically created elements
+            $(document).on('click', '.details-btn', function() {
                 var jobId = $(this).data('job-id');
                 var title = $(this).data('title');
                 var description = $(this).data('description');
@@ -469,9 +469,16 @@ if (!isset($_SESSION['User_ID'])) {
                 $('#searchJobs').val(''); // Clear the search input
                 filterJobs(); // Call filterJobs to restore job list
             });
+
+            // Add search functionality for enter key
+            $('#searchJobs').on('keypress', function(e) {
+                if(e.which === 13) { // Enter key
+                    filterJobs();
+                }
+            });
         });
 
-        // To find jobs
+        // To find jobs - Make this a global function since it's called from button onclick
         function filterJobs() {
             let searchQuery = document.getElementById("searchJobs").value.trim();
             window.location.href = "job-list_1.php?search=" + encodeURIComponent(searchQuery);
