@@ -518,5 +518,39 @@ if (!isset($_SESSION['User_ID'])) {
         }
 
     </script>
+
+    <script>
+        // This script provides a direct fix with minimal changes to your existing code
+        $(document).ready(function() {
+            console.log("Document ready - attempting to fix modal");
+            
+            // Direct event handler for details buttons
+            $('.details-btn').on('click', function(e) {
+                e.preventDefault();
+                console.log("Details button clicked");
+                
+                // Get job details
+                const jobId = $(this).data('job-id');
+                const title = $(this).data('title');
+                const description = $(this).data('description');
+                const location = $(this).data('location');
+                const salary = $(this).data('salary');
+                
+                // Update modal content
+                $('#modal-title').text(title);
+                $('#modal-description').text('Description: ' + description);
+                $('#modal-location').text('Location: ' + location);
+                $('#modal-salary').text('Salary: RM ' + salary);
+                
+                // Store job ID
+                $('#details-modal').data('job-id', jobId);
+                $('#job-id-input').val(jobId);
+                
+                // Force show the modal using Bootstrap's method
+                var detailsModal = new bootstrap.Modal(document.getElementById('details-modal'));
+                detailsModal.show();
+            });
+        });
+    </script>
 </body>
 </html>
