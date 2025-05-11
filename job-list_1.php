@@ -35,6 +35,7 @@ if (!isset($_SESSION['User_ID'])) {
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600&family=Inter:wght@700;800&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
+    
     <link href="lib/animate/animate.min.css" rel="stylesheet">
     <link href="lib/owlcarousel/assets/owl.carousel.min.css" rel="stylesheet">
     <link href="css/bootstrap.min.css" rel="stylesheet">
@@ -303,7 +304,7 @@ if (!isset($_SESSION['User_ID'])) {
                 </div>
             </div>
         </div>
-    </div>
+    
 
         <!-- Footer Start -->
         <div class="container-fluid bg-dark text-white-50 footer pt-5 mt-5 wow fadeIn">
@@ -338,216 +339,217 @@ if (!isset($_SESSION['User_ID'])) {
                 </div>
             </div>
         </div>
-    </div>
+    
 
-    <a href="#" class="btn btn-lg btn-orange btn-lg-square back-to-top"><i class="bi bi-arrow-up"></i></a>
+        <a href="#" class="btn btn-lg btn-orange btn-lg-square back-to-top"><i class="bi bi-arrow-up"></i></a>
 
-    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="lib/wow/wow.min.js"></script>
-    <script src="lib/easing/easing.min.js"></script>
-    <script src="lib/waypoints/waypoints.min.js"></script>
-    <script src="lib/owlcarousel/owl.carousel.min.js"></script>
-    <script src="js/main.js"></script>
-    <script>
-        // Replace the existing JavaScript section at the bottom of the file
-        function filterJobs() {
-            let searchQuery = document.getElementById("searchJobs").value.trim();
-            window.location.href = "job-list_1.php?search=" + encodeURIComponent(searchQuery);
-        }
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+        <script src="lib/wow/wow.min.js"></script>
+        <script src="lib/easing/easing.min.js"></script>
+        <script src="lib/waypoints/waypoints.min.js"></script>
+        <script src="lib/owlcarousel/owl.carousel.min.js"></script>
+        <script src="js/main.js"></script>
+        <script>
+            // Replace the existing JavaScript section at the bottom of the file
+            function filterJobs() {
+                let searchQuery = document.getElementById("searchJobs").value.trim();
+                window.location.href = "job-list_1.php?search=" + encodeURIComponent(searchQuery);
+            }
 
-        // Document ready handler
-        $(document).ready(function() {
-            console.log("Document ready function running");
-            
-            // Bind click event to search button (alternative to inline onclick)
-            $("#search-button").on("click", function() {
-                console.log("Search button clicked");
-                filterJobs();
-            });
-            
-            // Add search functionality for enter key
-            $('#searchJobs').on('keypress', function(e) {
-                if(e.which === 13) { // Enter key
-                    console.log("Enter key pressed in search");
+            // Document ready handler
+            $(document).ready(function() {
+                console.log("Document ready function running");
+                
+                // Bind click event to search button (alternative to inline onclick)
+                $("#search-button").on("click", function() {
+                    console.log("Search button clicked");
                     filterJobs();
-                }
-            });
-
-            // Debug output for details buttons
-            console.log("Details buttons found: " + $('.details-btn').length);
-            
-            // Job details modal handlers - Using event delegation for dynamically created elements
-            $(document).on('click', '.details-btn', function() {
-                console.log("Details button clicked");
-                var jobId = $(this).data('job-id');
-                var title = $(this).data('title');
-                var description = $(this).data('description');
-                var location = $(this).data('location');
-                var salary = $(this).data('salary');
-
-                console.log("Job data:", { jobId, title, description, location, salary });
-
-                // Store job ID in the hidden input
-                $('#job-id-input').val(jobId);
+                });
                 
-                // Update modal content
-                $('#modal-title').text(title);
-                $('#modal-description').text('Description: ' + description);
-                $('#modal-location').text('Location: ' + location);
-                $('#modal-salary').text('Salary: RM ' + salary);
-                
-                // Show the modal using Bootstrap's modal method
-                var detailsModal = new bootstrap.Modal(document.getElementById('details-modal'));
-                detailsModal.show();
-            });
-
-            // Clear search input and restore job list
-            $('#clearSearchBtn').click(function() {
-                console.log("Clear search button clicked");
-                $('#searchJobs').val(''); // Clear the search input
-                filterJobs(); // Call filterJobs to restore job list
-            });
-
-            // Apply Now button handling
-            $('#apply-now-btn').click(function() {
-                console.log("Apply now button clicked");
-                const userLoggedIn = <?php echo isset($_SESSION['User_ID']) ? 'true' : 'false'; ?>;
-                
-                if (userLoggedIn) {
-                    // Show application form
-                    $('#application-form').show();
-                    $(this).hide();
-                } else {
-                    // Close details modal first
-                    var detailsModal = bootstrap.Modal.getInstance(document.getElementById('details-modal'));
-                    if (detailsModal) {
-                        detailsModal.hide();
+                // Add search functionality for enter key
+                $('#searchJobs').on('keypress', function(e) {
+                    if(e.which === 13) { // Enter key
+                        console.log("Enter key pressed in search");
+                        filterJobs();
                     }
-                    window.location.href = 'login.php';
-                }
-            });
+                });
 
-            // Add form submission handler
-            $('#application-form').on('submit', function(e) {
-                e.preventDefault();
-                console.log("Form submitted");
+                // Debug output for details buttons
+                console.log("Details buttons found: " + $('.details-btn').length);
                 
-                var formData = new FormData(this);
-                
-                $.ajax({
-                    url: 'submit_application.php',
-                    type: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    dataType: 'json',
-                    success: function(result) {
-                        console.log("AJAX success:", result);
-                        if(result.status === 'success') {
-                            alert(result.message);
+                // Job details modal handlers - Using event delegation for dynamically created elements
+                $(document).on('click', '.details-btn', function() {
+                    console.log("Details button clicked");
+                    var jobId = $(this).data('job-id');
+                    var title = $(this).data('title');
+                    var description = $(this).data('description');
+                    var location = $(this).data('location');
+                    var salary = $(this).data('salary');
+
+                    console.log("Job data:", { jobId, title, description, location, salary });
+
+                    // Store job ID in the hidden input
+                    $('#job-id-input').val(jobId);
+                    
+                    // Update modal content
+                    $('#modal-title').text(title);
+                    $('#modal-description').text('Description: ' + description);
+                    $('#modal-location').text('Location: ' + location);
+                    $('#modal-salary').text('Salary: RM ' + salary);
+                    
+                    // Show the modal using Bootstrap's modal method
+                    var detailsModal = new bootstrap.Modal(document.getElementById('details-modal'));
+                    detailsModal.show();
+                });
+
+                // Clear search input and restore job list
+                $('#clearSearchBtn').click(function() {
+                    console.log("Clear search button clicked");
+                    $('#searchJobs').val(''); // Clear the search input
+                    filterJobs(); // Call filterJobs to restore job list
+                });
+
+                // Apply Now button handling
+                $('#apply-now-btn').click(function() {
+                    console.log("Apply now button clicked");
+                    const userLoggedIn = <?php echo isset($_SESSION['User_ID']) ? 'true' : 'false'; ?>;
+                    
+                    if (userLoggedIn) {
+                        // Show application form
+                        $('#application-form').show();
+                        $(this).hide();
+                    } else {
+                        // Close details modal first
+                        var detailsModal = bootstrap.Modal.getInstance(document.getElementById('details-modal'));
+                        if (detailsModal) {
+                            detailsModal.hide();
+                        }
+                        window.location.href = 'login.php';
+                    }
+                });
+
+                // Add form submission handler
+                $('#application-form').on('submit', function(e) {
+                    e.preventDefault();
+                    console.log("Form submitted");
+                    
+                    var formData = new FormData(this);
+                    
+                    $.ajax({
+                        url: 'submit_application.php',
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        dataType: 'json',
+                        success: function(result) {
+                            console.log("AJAX success:", result);
+                            if(result.status === 'success') {
+                                alert(result.message);
+                                // Close modal using Bootstrap's method
+                                var detailsModal = bootstrap.Modal.getInstance(document.getElementById('details-modal'));
+                                if (detailsModal) {
+                                    detailsModal.hide();
+                                }
+                            } else {
+                                alert(result.message);
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("XHR Status:", status);
+                            console.error("Error:", error);
+                            console.log("Response text:", xhr.responseText);
+                            
+                            alert('Your application has been submitted, but there was an issue with the confirmation.');
                             // Close modal using Bootstrap's method
                             var detailsModal = bootstrap.Modal.getInstance(document.getElementById('details-modal'));
                             if (detailsModal) {
                                 detailsModal.hide();
                             }
-                        } else {
-                            alert(result.message);
                         }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error("XHR Status:", status);
-                        console.error("Error:", error);
-                        console.log("Response text:", xhr.responseText);
+                    });
+                });
+
+                // Add script to toggle the resume upload field
+                const uploadNewResumeCheckbox = document.getElementById('upload-new-resume');
+                if (uploadNewResumeCheckbox) {
+                    uploadNewResumeCheckbox.addEventListener('change', function() {
+                        console.log("Resume checkbox changed");
+                        const newResumeUploadDiv = document.getElementById('new-resume-upload');
+                        const resumeInput = document.querySelector('#new-resume-upload #resume');
                         
-                        alert('Your application has been submitted, but there was an issue with the confirmation.');
-                        // Close modal using Bootstrap's method
-                        var detailsModal = bootstrap.Modal.getInstance(document.getElementById('details-modal'));
-                        if (detailsModal) {
-                            detailsModal.hide();
+                        if (this.checked) {
+                            newResumeUploadDiv.style.display = 'block';
+                            resumeInput.required = true;
+                            document.querySelector('input[name="use_existing_resume"]').value = '0';
+                        } else {
+                            newResumeUploadDiv.style.display = 'none';
+                            resumeInput.required = false;
+                            document.querySelector('input[name="use_existing_resume"]').value = '1';
                         }
-                    }
-                });
+                    });
+                }
             });
+        </script>
+        <!--
+        ADD THIS AT THE VERY BOTTOM OF YOUR PAGE, IMMEDIATELY BEFORE THE CLOSING </body> TAG
+        Make sure this is AFTER any other JavaScript includes
+        -->
 
-            // Add script to toggle the resume upload field
-            const uploadNewResumeCheckbox = document.getElementById('upload-new-resume');
-            if (uploadNewResumeCheckbox) {
-                uploadNewResumeCheckbox.addEventListener('change', function() {
-                    console.log("Resume checkbox changed");
-                    const newResumeUploadDiv = document.getElementById('new-resume-upload');
-                    const resumeInput = document.querySelector('#new-resume-upload #resume');
-                    
-                    if (this.checked) {
-                        newResumeUploadDiv.style.display = 'block';
-                        resumeInput.required = true;
-                        document.querySelector('input[name="use_existing_resume"]').value = '0';
-                    } else {
-                        newResumeUploadDiv.style.display = 'none';
-                        resumeInput.required = false;
-                        document.querySelector('input[name="use_existing_resume"]').value = '1';
-                    }
-                });
+        <script>
+            // Test if JavaScript is working at all
+            console.log("TEST SCRIPT RUNNING");
+            alert("Test alert - JavaScript is running");
+
+            // Define the filterJobs function globally
+            function filterJobs() {
+                console.log("filterJobs called");
+                alert("Search button clicked!");
+                let searchQuery = document.getElementById("searchJobs").value.trim();
+                window.location.href = "job-list_1.php?search=" + encodeURIComponent(searchQuery);
             }
-        });
-    </script>
-    <!--
-    ADD THIS AT THE VERY BOTTOM OF YOUR PAGE, IMMEDIATELY BEFORE THE CLOSING </body> TAG
-    Make sure this is AFTER any other JavaScript includes
-    -->
 
-    <script>
-        // Test if JavaScript is working at all
-        console.log("TEST SCRIPT RUNNING");
-        alert("Test alert - JavaScript is running");
-
-        // Define the filterJobs function globally
-        function filterJobs() {
-            console.log("filterJobs called");
-            alert("Search button clicked!");
-            let searchQuery = document.getElementById("searchJobs").value.trim();
-            window.location.href = "job-list_1.php?search=" + encodeURIComponent(searchQuery);
-        }
-
-        // Test direct event binding
-        document.addEventListener("DOMContentLoaded", function() {
-            console.log("DOM fully loaded");
-            
-            // Test click on search button
-            document.querySelector(".btn-primary").addEventListener("click", function() {
-                console.log("Search button clicked via direct binding");
-                filterJobs();
-            });
-            
-            // Test click on details buttons
-            var detailButtons = document.querySelectorAll(".details-btn");
-            console.log("Found " + detailButtons.length + " detail buttons");
-            
-            detailButtons.forEach(function(button) {
-                button.addEventListener("click", function() {
-                    console.log("Detail button clicked via direct binding");
-                    alert("Detail button clicked!");
-                    
-                    var jobId = this.getAttribute("data-job-id");
-                    var title = this.getAttribute("data-title");
-                    var description = this.getAttribute("data-description");
-                    var location = this.getAttribute("data-location");
-                    var salary = this.getAttribute("data-salary");
-                    
-                    console.log("Job data:", { jobId, title, description, location, salary });
-                    
-                    // Manually update modal content
-                    document.getElementById("modal-title").textContent = title;
-                    document.getElementById("modal-description").textContent = "Description: " + description;
-                    document.getElementById("modal-location").textContent = "Location: " + location;
-                    document.getElementById("modal-salary").textContent = "Salary: RM " + salary;
-                    
-                    // Show modal using vanilla JS
-                    var detailsModal = new bootstrap.Modal(document.getElementById("details-modal"));
-                    detailsModal.show();
+            // Test direct event binding
+            document.addEventListener("DOMContentLoaded", function() {
+                console.log("DOM fully loaded");
+                
+                // Test click on search button
+                document.querySelector(".btn-primary").addEventListener("click", function() {
+                    console.log("Search button clicked via direct binding");
+                    filterJobs();
+                });
+                
+                // Test click on details buttons
+                var detailButtons = document.querySelectorAll(".details-btn");
+                console.log("Found " + detailButtons.length + " detail buttons");
+                
+                detailButtons.forEach(function(button) {
+                    button.addEventListener("click", function() {
+                        console.log("Detail button clicked via direct binding");
+                        alert("Detail button clicked!");
+                        
+                        var jobId = this.getAttribute("data-job-id");
+                        var title = this.getAttribute("data-title");
+                        var description = this.getAttribute("data-description");
+                        var location = this.getAttribute("data-location");
+                        var salary = this.getAttribute("data-salary");
+                        
+                        console.log("Job data:", { jobId, title, description, location, salary });
+                        
+                        // Manually update modal content
+                        document.getElementById("modal-title").textContent = title;
+                        document.getElementById("modal-description").textContent = "Description: " + description;
+                        document.getElementById("modal-location").textContent = "Location: " + location;
+                        document.getElementById("modal-salary").textContent = "Salary: RM " + salary;
+                        
+                        // Show modal using vanilla JS
+                        var detailsModal = new bootstrap.Modal(document.getElementById("details-modal"));
+                        detailsModal.show();
+                    });
                 });
             });
-        });
-    </script>
+        </script>
+    </div>
 </body>
 </html>
