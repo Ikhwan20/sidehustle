@@ -387,44 +387,39 @@ if (!isset($_SESSION['User_ID'])) {
                 $('#user-nav').hide();
             }
 
-            let selectedJobId = null;
-
-            // Initialize Bootstrap modals properly
-            const detailsModal = new bootstrap.Modal(document.getElementById('details-modal'));
-            const loginModal = new bootstrap.Modal(document.getElementById('login-modal'));
-            const registerModal = new bootstrap.Modal(document.getElementById('register-modal'));
-
+            // Job details modal handlers
             $('.details-btn').click(function() {
-                    var jobId = $(this).data('job-id');
-                    var title = $(this).data('title');
-                    var description = $(this).data('description');
-                    var location = $(this).data('location');
-                    var salary = $(this).data('salary');
+                var jobId = $(this).data('job-id');
+                var title = $(this).data('title');
+                var description = $(this).data('description');
+                var location = $(this).data('location');
+                var salary = $(this).data('salary');
 
-                    // Store job ID in the modal
-                    $('#details-modal').data('job-id', jobId);
-
-                    $('#modal-title').text(title);
-                    $('#modal-description').text('Description: ' + description);
-                    $('#modal-location').text('Location: ' + location);
-                    $('#modal-salary').text('Salary: RM ' + salary);
-
-                    $('#details-modal').modal('show');
-                });
+                // Store job ID in the hidden input
+                $('#job-id-input').val(jobId);
+                
+                // Update modal content
+                $('#modal-title').text(title);
+                $('#modal-description').text('Description: ' + description);
+                $('#modal-location').text('Location: ' + location);
+                $('#modal-salary').text('Salary: RM ' + salary);
+                
+                // Show the modal using Bootstrap's modal method
+                var detailsModal = new bootstrap.Modal(document.getElementById('details-modal'));
+                detailsModal.show();
+            });
 
             $('#apply-now-btn').click(function() {
-                const userLoggedIn = <?php echo isset($_SESSION['User_ID']) ? 'true' : 'false'; ?>;
-                
                 if (userLoggedIn) {
                     // Show application form
                     $('#application-form').show();
                     $(this).hide();
-                    
-                    // Set the job ID in the hidden field
-                    var jobId = $('#details-modal').data('job-id');
-                    $('#job-id-input').val(jobId);
                 } else {
-                    $('#details-modal').modal('hide');
+                    // Close details modal first
+                    var detailsModal = bootstrap.Modal.getInstance(document.getElementById('details-modal'));
+                    if (detailsModal) {
+                        detailsModal.hide();
+                    }
                     window.location.href = 'login.php';
                 }
             });
@@ -445,8 +440,11 @@ if (!isset($_SESSION['User_ID'])) {
                     success: function(result) {
                         if(result.status === 'success') {
                             alert(result.message);
-                            // Use Bootstrap's modal hide method instead of fadeOut
-                            $('#details-modal').modal('hide');
+                            // Close modal using Bootstrap's method
+                            var detailsModal = bootstrap.Modal.getInstance(document.getElementById('details-modal'));
+                            if (detailsModal) {
+                                detailsModal.hide();
+                            }
                         } else {
                             alert(result.message);
                         }
@@ -457,8 +455,11 @@ if (!isset($_SESSION['User_ID'])) {
                         console.log("Response text:", xhr.responseText);
                         
                         alert('Your application has been submitted, but there was an issue with the confirmation.');
-                        // Also use modal('hide') here
-                        $('#details-modal').modal('hide');
+                        // Close modal using Bootstrap's method
+                        var detailsModal = bootstrap.Modal.getInstance(document.getElementById('details-modal'));
+                        if (detailsModal) {
+                            detailsModal.hide();
+                        }
                     }
                 });
             });
@@ -476,6 +477,26 @@ if (!isset($_SESSION['User_ID'])) {
             window.location.href = "job-list_1.php?search=" + encodeURIComponent(searchQuery);
         }
 
+        // Add script to toggle the resume upload field
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadNewResumeCheckbox = document.getElementById('upload-new-resume');
+            if (uploadNewResumeCheckbox) {
+                uploadNewResumeCheckbox.addEventListener('change', function() {
+                    const newResumeUploadDiv = document.getElementById('new-resume-upload');
+                    const resumeInput = document.querySelector('#new-resume-upload #resume');
+                    
+                    if (this.checked) {
+                        newResumeUploadDiv.style.display = 'block';
+                        resumeInput.required = true;
+                        document.querySelector('input[name="use_existing_resume"]').value = '0';
+                    } else {
+                        newResumeUploadDiv.style.display = 'none';
+                        resumeInput.required = false;
+                        document.querySelector('input[name="use_existing_resume"]').value = '1';
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html>
