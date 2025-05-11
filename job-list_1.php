@@ -387,6 +387,11 @@ if (!isset($_SESSION['User_ID'])) {
 
             let selectedJobId = null;
 
+            // Initialize Bootstrap modals properly
+            const detailsModal = new bootstrap.Modal(document.getElementById('details-modal'));
+            const loginModal = new bootstrap.Modal(document.getElementById('login-modal'));
+            const registerModal = new bootstrap.Modal(document.getElementById('register-modal'));
+
             $('.details-btn').click(function() {
                 const title = $(this).data('title');
                 const company = $(this).data('company');
@@ -398,12 +403,15 @@ if (!isset($_SESSION['User_ID'])) {
                 $('#details-modal').data('job-id', $(this).data('job-id'));
 
                 $('#modal-title').text(title);
-                $('#modal-company').text(company ? company : '');
-                $('#modal-description').text(description);
-                $('#modal-location').text(location);
-                $('#modal-salary').text('RM ' + salary);
+                if (company) {
+                    $('#modal-company').text(company);
+                }
+                $('#modal-description').text('Description: ' + description);
+                $('#modal-location').text('Location: ' + location);
+                $('#modal-salary').text('Salary: RM ' + salary);
 
-                $('#details-modal').fadeIn();
+                // Show the modal using Bootstrap's modal method
+                detailsModal.show();
             });
 
             $('#apply-now-btn').click(function() {
@@ -418,8 +426,8 @@ if (!isset($_SESSION['User_ID'])) {
                     var jobId = $('#details-modal').data('job-id');
                     $('#job-id-input').val(jobId);
                 } else {
-                    $('#details-modal').fadeOut();
-                    $('#login-modal').fadeIn();
+                    detailsModal.hide();
+                    loginModal.show();
                 }
             });
 
@@ -440,7 +448,7 @@ if (!isset($_SESSION['User_ID'])) {
                         // Since we're using dataType:'json', jQuery will parse the JSON for us
                         if(result.status === 'success') {
                             alert(result.message);
-                            $('#details-modal').fadeOut(); // or .modal('hide') for Bootstrap
+                            detailsModal.hide();
                         } else {
                             alert(result.message);
                         }
@@ -456,8 +464,15 @@ if (!isset($_SESSION['User_ID'])) {
                 });
             });
 
-            $('#close-details-modal, #close-login-modal, #close-register-modal, #close-particulars-modal').click(function() {
-                $('.modal').fadeOut();
+            // Close button handlers - use Bootstrap modal methods
+            $('.btn-close, .close').click(function() {
+                if ($(this).closest('#details-modal').length) {
+                    detailsModal.hide();
+                } else if ($(this).closest('#login-modal').length) {
+                    loginModal.hide();
+                } else if ($(this).closest('#register-modal').length) {
+                    registerModal.hide();
+                }
             });
 
             $('#logout-btn').click(function() {
@@ -473,26 +488,34 @@ if (!isset($_SESSION['User_ID'])) {
                 const phone = $('#phone').val();
                 const address = $('#address').val();
 
-                $.post('submit_application.php', { job_id: jobId, phone: phone, address: address }, function(response) {
-                    alert('Application submitted successfully!');
-                    $('#particulars-modal').fadeOut();
-                }).fail(function() {
-                    alert('Failed to submit application. Please try again.');
+                $.ajax({
+                    url: 'submit_application.php',
+                    type: 'POST',
+                    data: { job_id: jobId, phone: phone, address: address },
+                    dataType: 'json',
+                    success: function(response) {
+                        alert('Application submitted successfully!');
+                        // Hide the modal using Bootstrap method
+                        $('#particulars-modal').modal('hide');
+                    },
+                    error: function() {
+                        alert('Failed to submit application. Please try again.');
+                    }
                 });
             });
             
             // Clear search input and restore job list
-                $('#clearSearchBtn').click(function() {
-                    $('#searchJobs').val(''); // Clear the search input
-                    filterJobs(); // Call filterJobs to restore job list
+            $('#clearSearchBtn').click(function() {
+                $('#searchJobs').val(''); // Clear the search input
+                filterJobs(); // Call filterJobs to restore job list
             });
-                });
+        });
 
-            // To find jobs
-            function filterJobs() {
-                let searchQuery = document.getElementById("searchJobs").value.trim();
-                window.location.href = "job-list_1.php?search=" + encodeURIComponent(searchQuery);
-            }
+        // To find jobs
+        function filterJobs() {
+            let searchQuery = document.getElementById("searchJobs").value.trim();
+            window.location.href = "job-list_1.php?search=" + encodeURIComponent(searchQuery);
+        }
 
     </script>
 </body>
