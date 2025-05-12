@@ -66,6 +66,7 @@ if ($update_result) {
 // Fetch jobs posted by the logged-in employer
 $employerId = $_SESSION['employer_id'];
 $jobs_query = "SELECT * FROM jobs WHERE Employer_ID = '$employerId'";
+$jobs_query .= " ORDER BY Title ASC";
 $jobs_result = mysqli_query($con, $jobs_query);
 ?>
 
