@@ -257,7 +257,7 @@ if (!isset($_SESSION['User_ID'])) {
                                         
                                         <?php if (isset($current_user) && !empty($current_user['Resume'])): ?>
                                             <!-- If user has a resume, use it automatically -->
-                                            <div class="mb-3">
+                                            <div hidden class="mb-3">
                                                 <label class="form-label">Resume</label>
                                                 <div class="alert alert-success">
                                                     <p>We will use your existing resume on file.</p>
@@ -280,7 +280,7 @@ if (!isset($_SESSION['User_ID'])) {
                                             </div>
                                         <?php else: ?>
                                             <!-- If no resume found, show upload field -->
-                                            <div class="mb-3">
+                                            <div hidden class="mb-3">
                                                 <label for="resume" class="form-label">Resume</label>
                                                 <input type="file" class="form-control" id="resume" name="resume" accept=".pdf,.doc,.docx" required>
                                                 <small class="text-muted">Please upload your resume (PDF, DOC, or DOCX)</small>
