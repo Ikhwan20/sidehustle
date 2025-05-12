@@ -229,7 +229,7 @@ if (isset($_SESSION['User_ID'])) {
                             echo '<p><strong>Description:</strong> ' . htmlspecialchars($row['Description']) . '</p>';
                             echo '<p><strong>Location:</strong> ' . htmlspecialchars($row['Location']) . '</p>';
                             echo '<p><strong>Salary:</strong> RM ' . htmlspecialchars($row['Salary']) . ' per ' . $row['SalaryUnit'] . '</p>';
-                            echo '<p class="text-truncate me-0"><i class="fa fa-info-circle text-primary me-2"></i> ' . $row['WorkDate'] . ' (' . $row['Duration'] . ' days)</p>';
+                            echo '<p class="text-truncate me-0"><i class="fa fa-info-circle text-primary me-2"></i> ' . $row['WorkDate'] . ' (' . $row['Duration'] . ' month(s)</p>';
                             echo '<span><button class="btn btn-orange details-btn" data-job-id="' . htmlspecialchars($row['Job_ID']) . '" data-title="' . htmlspecialchars($row['Title']) . '" data-description="' . htmlspecialchars($row['Description']) . '" data-location="' . htmlspecialchars($row['Location']) . '" data-salary="' . htmlspecialchars($row['Salary']) . '">View Details</button></span>';
                             echo '</div>';
                             echo '</div>';
