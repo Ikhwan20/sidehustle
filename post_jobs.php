@@ -56,7 +56,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
                 // Extract values from tagify format
                 $skillsArray = array_map(function($item) {
-                    return is_array($item) && isset($item['value']) ? $item['value'] : $item;
+                    if (is_array($item) && isset($item['value'])) {
+                        return trim($item['value']);
+                    } elseif (is_string($item)) {
+                        return trim($item);
+                    } else {
+                        return '';
+                    }
                 }, $decoded);
             } else {
                 // Plain comma-separated string
@@ -92,7 +98,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $skillsArray = json_decode($skills, true);
 
         foreach ($skillsArray as $skillName) {
-            $skillName = trim($skillName);
+            $skillName = is_string($skillName) ? trim($skillName) : strval($skillName);
             if (empty($skillName)) continue;
 
             // Check if skill exists
