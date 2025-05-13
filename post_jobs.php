@@ -31,10 +31,42 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $employmentStatus = $_POST['employment_status'] ?? 'Open';
     $skills = $_POST['skills'] ?? '[]'; // Expecting JSON array from frontend
 
+    // Proper handling of skills data
+    $skillsArray = [];
+
+    // Check if skills is already a JSON string
+    if (is_string($skills) && !empty($skills)) {
+        if (substr($skills, 0, 1) == '[') {
+            // It's likely already JSON
+            $decoded = json_decode($skills, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $skillsArray = $decoded;
+            } else {
+                // Failed to parse JSON, treat as comma-separated
+                $skillsArray = array_map('trim', explode(',', $skills));
+            }
+        } else {
+            // Check if it's a Tagify formatted string
+            $decoded = json_decode($skills, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                // Extract values from tagify format
+                $skillsArray = array_map(function($item) {
+                    return is_array($item) && isset($item['value']) ? $item['value'] : $item;
+                }, $decoded);
+            } else {
+                // Plain comma-separated string
+                $skillsArray = array_map('trim', explode(',', $skills));
+            }
+        }
+    }
+
+    // Filter out empty values
+    $skillsArray = array_filter($skillsArray, function($value) { return !empty($value); });
+
     $employerId = $_SESSION['employer_id'];
 
     // Store skills JSON in jobs table
-    $skillsJson = json_encode(json_decode($skills, true)); // Clean JSON
+    $skillsJson = json_encode(array_values($skillsArray));
 
     $stmt = $con->prepare("INSERT INTO jobs (
         Title, Company, Description, Location, WorkDate, Employer_ID, 
@@ -53,9 +85,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         // Process and link skills
         $skillsArray = json_decode($skills, true);
-        $skillList = is_array($skillsArray) ? $skillsArray : [];
 
-        foreach ($skillList as $skillName) {
+        foreach ($skillsArray as $skillName) {
             $skillName = trim($skillName);
             if (empty($skillName)) continue;
 
@@ -284,16 +315,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     });
     
-    document.getElementById("jobForm").addEventListener("submit", function(e) {
-        const skillInput = document.querySelector('input[name="skills"]');
-        if(skillInput && skillInput.value) {
-            // Check if it's already a JSON string
-            if(!skillInput.value.startsWith('[')) {
-                const skills = skillInput.value.split(',').map(s => s.trim()).filter(s => s);
-                skillInput.value = JSON.stringify(skills); // Convert to JSON before submit
-            }
-        }
-    });
+    
 </script>
 </body>
 </html>
