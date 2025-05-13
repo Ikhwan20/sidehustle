@@ -96,9 +96,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         // Process and link skills
         $skillsArray = json_decode($skills, true);
+        $processedSkillIds = [];
 
         foreach ($skillsArray as $skillName) {
-            $skillName = is_string($skillName) ? trim($skillName) : strval($skillName);
+            if (is_array($skillName)) {
+                // If somehow we still have an array, get a string value from it
+                $skillName = isset($skillName['value']) ? $skillName['value'] : json_encode($skillName);
+            }
+            
+            $skillName = trim(strval($skillName));
             if (empty($skillName)) continue;
 
             // Check if skill exists
@@ -119,6 +125,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $insertStmt->execute();
                 $skillId = $insertStmt->insert_id;
             }
+            if (in_array($skillId, $processedSkillIds)) {
+                continue; // Skip this skill as it's already been processed
+            }
+            $processedSkillIds[] = $skillId;
 
             // Link skill to job
             $linkQuery = "INSERT INTO job_skills (Job_ID, Skill_ID) VALUES (?, ?)";
