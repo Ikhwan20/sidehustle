@@ -8,6 +8,60 @@ function debug_to_file($message) {
     file_put_contents('edit_job_debug.log', date('Y-m-d H:i:s') . ': ' . $message . "\n", FILE_APPEND);
 }
 
+// Helper function to process skills from various formats to comma-separated string
+function processSkillsForDisplay($skillsData) {
+    if (empty($skillsData)) {
+        return '';
+    }
+    
+    // Check if the skills data is a JSON string
+    if (is_string($skillsData)) {
+        $decoded = json_decode($skillsData, true);
+        if (is_array($decoded)) {
+            // JSON format detected
+            $skillValues = array_map(function($item) {
+                return is_array($item) && isset($item['value']) ? $item['value'] : $item;
+            }, $decoded);
+            return implode(', ', array_filter($skillValues));
+        }
+        
+        // Already a comma-separated string or another format
+        return $skillsData;
+    }
+    
+    // If somehow an array was passed directly
+    if (is_array($skillsData)) {
+        $skillValues = array_map(function($item) {
+            return is_array($item) && isset($item['value']) ? $item['value'] : $item;
+        }, $skillsData);
+        return implode(', ', array_filter($skillValues));
+    }
+    
+    return '';
+}
+
+// Helper function to convert comma-separated skills to the right format for storage
+function formatSkillsForStorage($skillsString, $originalFormat) {
+    // If the original format was JSON, preserve that format
+    if (!empty($originalFormat)) {
+        $decoded = json_decode($originalFormat, true);
+        if (is_array($decoded)) {
+            // Original was JSON, so convert back to that format
+            $skills = array_map('trim', explode(',', $skillsString));
+            $result = [];
+            foreach ($skills as $skill) {
+                if (!empty($skill)) {
+                    $result[] = ['value' => $skill];
+                }
+            }
+            return json_encode($result);
+        }
+    }
+    
+    // Otherwise just return the comma-separated string
+    return $skillsString;
+}
+
 // Redirect if not logged in
 if (!isset($_SESSION['employer_id'])) {
     header("Location: employer_login.php");
@@ -50,6 +104,22 @@ try {
             if (empty($title) || empty($description) || empty($job_requirements)) {
                 $error_message = "Please fill in all required fields.";
             } else {
+                // Get the original job to check the original skills format
+                $checkQuery = "SELECT Skills FROM jobs WHERE Job_ID=? LIMIT 1";
+                $checkStmt = $con->prepare($checkQuery);
+                $checkStmt->bind_param("i", $job_id);
+                $checkStmt->execute();
+                $checkResult = $checkStmt->get_result();
+                $originalSkillsFormat = '';
+                
+                if ($checkResult->num_rows > 0) {
+                    $originalJob = $checkResult->fetch_assoc();
+                    $originalSkillsFormat = $originalJob['Skills'] ?? '';
+                }
+                
+                // Format skills for storage
+                $formattedSkills = formatSkillsForStorage($skills, $originalSkillsFormat);
+                
                 // Prepare update query
                 $query = "UPDATE jobs SET 
                     Title=?, Company=?, Description=?, JobRequirements=?, 
@@ -70,7 +140,7 @@ try {
                         $title, $company, $description, $job_requirements, 
                         $salary, $salaryUnit, $duration, $jobType, $industry, 
                         $experienceLevel, $remoteOption, $employmentStatus, 
-                        $applicationDeadline, $location, $work_date, $skills,
+                        $applicationDeadline, $location, $work_date, $formattedSkills,
                         $minSalary, $maxSalary
                     ];
                 } else {
@@ -78,7 +148,7 @@ try {
                         $title, $company, $description, $job_requirements, 
                         $salary, $salaryUnit, $duration, $jobType, $industry, 
                         $experienceLevel, $remoteOption, $employmentStatus, 
-                        $applicationDeadline, $location, $work_date, $skills
+                        $applicationDeadline, $location, $work_date, $formattedSkills
                     ];
                 }
                 
@@ -166,6 +236,8 @@ try {
         
         if ($result->num_rows > 0) {
             $job = $result->fetch_assoc();
+            // Process skills for display
+            $job['DisplaySkills'] = processSkillsForDisplay($job['Skills'] ?? '');
         } else {
             // Job not found or doesn't belong to this employer
             $_SESSION['error_message'] = "Job not found or you don't have permission to edit it.";
@@ -345,7 +417,7 @@ try {
                             <div class="mb-3">
                                 <label for="skills" class="form-label">Skills (comma-separated)</label>
                                 <input type="text" class="form-control" id="skills" name="skills"
-                                       value="<?php echo htmlspecialchars($job['Skills'] ?? ''); ?>">
+                                       value="<?php echo htmlspecialchars($job['DisplaySkills'] ?? ''); ?>">
                             </div>
                             <div class="text-center">
                                 <button type="submit" class="btn btn-primary px-4 py-2">Update Job</button>
