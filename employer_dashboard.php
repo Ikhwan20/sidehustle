@@ -102,7 +102,7 @@ $jobs_result = mysqli_query($con, $jobs_query);
                             <span class="nav-link" style="cursor: pointer; color: #FE7A36;">Welcome,  <?php echo $_SESSION['employer_username']; ?></span>
                         </li>
                         <li class="nav-item">
-                            <a href="employer_dashboard.php" class="nav-link">Home</a>
+                            <a href="index.php" class="nav-link">Home</a>
                         </li>
                         <li class="nav-item">
                             <a href="post_jobs.php" class="nav-link">Post Jobs</a>
